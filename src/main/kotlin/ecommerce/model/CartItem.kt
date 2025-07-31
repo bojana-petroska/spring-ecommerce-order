@@ -13,8 +13,6 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "cart_items")
 class CartItem(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0L,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     var member: Member,
@@ -26,6 +24,8 @@ class CartItem(
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "cart_id", referencedColumnName = "id")
 //    var cart: Cart? = null,
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0L,
 ) {
     fun changeQuantity(quantity: Int) {
         this.quantity += quantity

@@ -17,8 +17,6 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "members")
 class Member(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0L,
     @Column(nullable = false, unique = true)
     val email: String,
     @Column(nullable = false)
@@ -29,13 +27,15 @@ class Member(
     val cart: Cart? = null,
     @OneToMany(mappedBy = "member", cascade = [CascadeType.ALL], orphanRemoval = true)
     val cartItems: MutableList<CartItem> = mutableListOf(),
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0L,
 ) {
     companion object {
         fun toEntity(
             member: Member,
             id: Long,
         ): Member {
-            return Member(id, member.email, member.password)
+            return Member(member.email, member.password, id = id)
         }
 
         fun from(loginForm: LoginForm): Member {

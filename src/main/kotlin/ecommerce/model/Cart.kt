@@ -13,12 +13,12 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "carts")
 class Cart(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0L,
     @OneToOne()
     @JoinColumn(name = "member_id", referencedColumnName = "id")
     var member: Member,
     @OneToMany(cascade = [CascadeType.ALL])
     @JoinColumn(name = "cart_item_id", referencedColumnName = "id")
     var cartItems: Set<CartItem> = emptySet(),
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0L,
 )

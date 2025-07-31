@@ -10,14 +10,14 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "products")
 class Product(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0L,
     @Column(nullable = false, unique = true)
     var name: String,
     @Column(nullable = false)
     var price: Double,
     @Column(nullable = false)
     var imageUrl: String,
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0L,
 ) {
     fun changeName(name: String) {
         this.name = name
@@ -36,7 +36,7 @@ class Product(
             product: Product,
             id: Long,
         ): Product {
-            return Product(id, product.name, product.price, product.imageUrl)
+            return Product(product.name, product.price, product.imageUrl, id = id)
         }
     }
 }
