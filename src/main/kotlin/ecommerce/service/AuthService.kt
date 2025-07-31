@@ -25,8 +25,7 @@ class AuthService(
         checkMemberEmailExists(form.email)
         val member = Member.from(form)
         val savedMember = memberRepository.save(member)
-        val cart = Cart(member = savedMember)
-        cartRepository.save(cart)
+        savedMember.cart = cartRepository.save(Cart())
         return memberRepository.findByIdOrNull(savedMember.id)
             ?: throw InternalServerErrorException(MESSAGE_MEMBER_NOT_FOUND)
     }

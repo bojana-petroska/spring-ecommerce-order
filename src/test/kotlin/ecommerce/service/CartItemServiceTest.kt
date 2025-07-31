@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Transactional
-class CartServiceTest(
+class CartItemServiceTest(
     @Autowired private val cartItemService: CartItemService,
     @Autowired private val cartItemRepository: CartItemRepository,
     @Autowired private val productRepository: ProductRepository,
@@ -46,6 +46,26 @@ class CartServiceTest(
         assertThat(cartItems).hasSize(1)
         assertThat(cartItems.first()).isEqualTo(savedItem)
     }
+
+//    @Test
+//    fun `addCartItem - 2`() {
+//        val form = RegisterForm(email = "test@test.com", password = "test1234")
+//        val registeredMember = authService.registerMember(form)
+//        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
+//        val savedProduct = productRepository.save(product)
+//        val savedItem = cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1,)
+//
+//        val cartItems = cartItemRepository.findAll()
+//
+//        val targetMember = memberRepository.findByIdOrNull(registeredMember.id)
+//
+//        registeredMember.cart?.cartItems?.add(savedItem)
+//
+//        assertThat(savedItem).isNotNull()
+//        assertThat(cartItems).hasSize(1)
+//        assertThat(cartItems.first()).isEqualTo(savedItem)
+//        assertThat(targetMember?.cart?.cartItems?.first()).isEqualTo(savedItem)
+//    }
 
     @Test
     fun `addToCart() - should throw exception when productId does not exist`() {

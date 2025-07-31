@@ -10,7 +10,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 
@@ -22,11 +21,9 @@ class Member(
     @Column(nullable = false)
     val password: String,
     val role: String? = null,
-    @OneToOne(cascade = [CascadeType.ALL])
-    @JoinColumn(name = "cart_id", referencedColumnName = "id")
-    val cart: Cart? = null,
-    @OneToMany(mappedBy = "member", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val cartItems: MutableList<CartItem> = mutableListOf(),
+    @OneToOne(cascade = [CascadeType.PERSIST])
+    @JoinColumn
+    var cart: Cart = Cart(),
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
 ) {
