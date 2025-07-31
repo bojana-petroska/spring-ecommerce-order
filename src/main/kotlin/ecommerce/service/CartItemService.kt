@@ -1,0 +1,92 @@
+package ecommerce.service
+
+import ecommerce.exception.NotFoundException
+import ecommerce.model.CartItem
+import ecommerce.repository.CartItemRepository
+import ecommerce.repository.MemberRepository
+import ecommerce.repository.ProductRepository
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Service
+
+@Service
+class CartItemService(
+    private val memberRepository: MemberRepository,
+    private val cartItemRepository: CartItemRepository,
+    private val productRepository: ProductRepository,
+) {
+    fun getCartItemsByMemberId(memberId: Long): List<CartItem> {
+        val member =
+            memberRepository.findByIdOrNull(memberId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        return cartItemRepository.findAllByMember(member)
+    }
+
+    fun addCartItem(
+        memberId: Long,
+        productId: Long,
+        quantity: Int = 1,
+    ): CartItem {
+        val member =
+            memberRepository.findByIdOrNull(memberId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val product =
+            productRepository.findByIdOrNull(productId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val target = cartItemRepository.findByMemberAndProduct(member, product)
+        if (target.isPresent) {
+            target.get().changeQuantity(quantity)
+            return target.get()
+        }
+        val cartItem = CartItem(member = member, product = product, quantity = quantity)
+        return cartItemRepository.save(cartItem)
+    }
+
+    fun updateQuantity(
+        memberId: Long,
+        productId: Long,
+        quantity: Int,
+    ): String {
+        val member =
+            memberRepository.findByIdOrNull(memberId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val product =
+            productRepository.findByIdOrNull(productId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val cartItem = cartItemRepository.findByMemberAndProduct(member, product)
+        when (cartItem.isPresent) {
+            true -> {
+                cartItem.get().quantity = quantity
+                return MESSAGE_UPDATE_SUCCESS
+            }
+            false -> throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND_IN_CART)
+        }
+    }
+
+    fun removeCartItem(
+        memberId: Long,
+        productId: Long,
+    ): String {
+        val member =
+            memberRepository.findByIdOrNull(memberId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val product =
+            productRepository.findByIdOrNull(productId)
+                ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val cartItem = cartItemRepository.findByMemberAndProduct(member, product)
+        when (cartItem.isPresent) {
+            true -> {
+                cartItemRepository.delete(cartItem.get())
+                return MESSAGE_REMOVE_SUCCESS
+            }
+            false -> throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND_IN_CART)
+        }
+    }
+
+    companion object {
+        const val MESSAGE_PRODUCT_NOT_FOUND = "Product not found"
+        const val MESSAGE_PRODUCT_NOT_FOUND_IN_CART = "Product not found in Cart"
+        const val MESSAGE_UNEXPECTED_ACTION_IN_CART = "Unexpected action in Cart"
+        const val MESSAGE_REMOVE_SUCCESS = "Item removed from cart"
+        const val MESSAGE_UPDATE_SUCCESS = "Item updated in cart"
+    }
+}

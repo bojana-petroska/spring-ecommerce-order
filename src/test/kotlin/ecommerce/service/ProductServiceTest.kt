@@ -2,25 +2,38 @@ package ecommerce.service
 
 import ecommerce.dto.ProductForm
 import ecommerce.exception.ProductNameAlreadyExistsException
+import ecommerce.model.Product
+import ecommerce.repository.ProductRepository
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.HttpStatus
-import org.springframework.test.context.jdbc.Sql
+import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@Sql(
-    scripts = ["/sql/product.sql"],
-    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD,
-)
+@Transactional
 class ProductServiceTest(
     @Autowired private val productService: ProductService,
+    @Autowired private val productRepository: ProductRepository,
 ) {
+    fun insert(productName: String = "product1"): Product {
+        val productForm = ProductForm(name = productName, price = 1.5, imageUrl = "https://www.product.com/image/1")
+        return productService.insert(productForm)
+    }
+
+    @BeforeEach
+    @Transactional
+    fun setup() {
+        productRepository.deleteAll()
+    }
+
     @Test
     fun `insert() - should throw an exception when name of product already exists`() {
-        val productForm = ProductForm(name = "Iron Man", price = 1.5, imageUrl = "https://www.product.com/image/1")
+        val name = "Iron Man"
+        insert(productName = name)
+        val productForm = ProductForm(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1")
         assertThrows<ProductNameAlreadyExistsException> { productService.insert(productForm) }
     }
 
@@ -36,26 +49,27 @@ class ProductServiceTest(
 
     @Test
     fun `update() - should throw an exception when name of product already exists`() {
-        val id = 2L
+        insert("Iron Man")
+        val product = insert()
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
-        assertThrows<ProductNameAlreadyExistsException> { productService.update(productForm, id) }
+        assertThrows<ProductNameAlreadyExistsException> { productService.update(productForm, product.id) }
     }
 
     @Test
     fun `update() - should update the product when original product and new product have same name`() {
-        val id = 1L
+        val product = insert()
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
-        val response = productService.update(productForm, id)
-        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        assertThat(response.body).isEqualTo(ProductForm.toEntity(productForm, id))
+        val response = productService.update(productForm, product.id)
+        assertThat(response.name).isEqualTo(productForm.name)
+        assertThat(response.id).isEqualTo(ProductForm.toEntity(productForm, product.id).id)
     }
 
     @Test
     fun `update() - should update the product when name of new product does not exists`() {
-        val id = 1L
+        val product = insert("Stone Body")
         val productForm = ProductForm(name = "Stone Body", price = 1.5, imageUrl = "https://www.product.com/image/1")
-        val response = productService.update(productForm, id)
-        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        assertThat(response.body).isEqualTo(ProductForm.toEntity(productForm, id))
+        val response = productService.update(productForm, product.id)
+        assertThat(response.name).isEqualTo(productForm.name)
+        assertThat(response.id).isEqualTo(ProductForm.toEntity(productForm, product.id).id)
     }
 }

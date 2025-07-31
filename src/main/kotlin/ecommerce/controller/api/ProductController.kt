@@ -1,7 +1,6 @@
 package ecommerce.controller.api
 
 import ecommerce.dto.ProductForm
-import ecommerce.exception.NotFoundException
 import ecommerce.exception.ProductNameAlreadyExistsException
 import ecommerce.model.Product
 import ecommerce.service.ProductService
@@ -40,7 +39,7 @@ class ProductController(private val productService: ProductService) {
     fun getProduct(
         @PathVariable id: Long,
     ): ResponseEntity<Product> {
-        val product = productService.findById(id) ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
+        val product = productService.findById(id)
         return ResponseEntity.ok(product)
     }
 
@@ -49,14 +48,16 @@ class ProductController(private val productService: ProductService) {
         @PathVariable id: Long,
         @RequestBody @Valid productForm: ProductForm,
     ): ResponseEntity<Product> {
-        return productService.update(productForm, id)
+        val product = productService.update(productForm, id)
+        return ResponseEntity.ok(product)
     }
 
     @DeleteMapping("{id}")
     fun deleteProduct(
         @PathVariable id: Long,
     ): ResponseEntity<Void> {
-        return productService.delete(id)
+        productService.delete(id)
+        return ResponseEntity.noContent().build()
     }
 
     @ExceptionHandler(ProductNameAlreadyExistsException::class)
@@ -65,10 +66,5 @@ class ProductController(private val productService: ProductService) {
         val errorBody = mapOf("errors" to error)
         println("ProductNameAlreadyExistsException occurred: $errorBody")
         return ResponseEntity.badRequest().body(errorBody)
-    }
-
-    companion object {
-        const val MESSAGE_PRODUCT_NOT_FOUND = "Product not found"
-        const val MESSAGE_UNEXPECTED_PRODUCT_ACTION = "Unexpected product action"
     }
 }

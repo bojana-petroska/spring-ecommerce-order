@@ -19,6 +19,6 @@ class Cart(
     @JoinColumn(name = "member_id", referencedColumnName = "id")
     var member: Member,
     @OneToMany(cascade = [CascadeType.ALL])
-    @JoinColumn(name = "cart_item_id", referencedColumnName = "id", nullable = false)
-    var cartItems: List<CartItem> = emptyList(),
+    @JoinColumn(name = "cart_item_id", referencedColumnName = "id")
+    var cartItems: Set<CartItem> = emptySet(),
 )

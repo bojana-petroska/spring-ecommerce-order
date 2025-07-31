@@ -1,33 +1,30 @@
 package ecommerce.controller
 
 import ecommerce.controller.api.ProductController
-import ecommerce.dao.JdbcProductDao
 import ecommerce.dto.ProductForm
 import ecommerce.exception.NotFoundException
 import ecommerce.model.Product
+import ecommerce.repository.ProductRepository
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.jdbc.Sql
+import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@Sql(
-    scripts = ["/sql/product.sql"],
-    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD,
-)
+@Transactional
 class ProductControllerTest(
-    @Autowired private val jdbcProductDao: JdbcProductDao,
+    @Autowired private val productRepository: ProductRepository,
     @Autowired private val controller: ProductController,
 ) {
-    fun create() {
-        val product = Product(name = "product1", price = 1.5, imageUrl = "https://www.product.com/image/1")
-        jdbcProductDao.insert(product)
+    fun create(productName: String = "product1"): Product {
+        val product = Product(name = productName, price = 1.5, imageUrl = "https://www.product.com/image/1")
+        return productRepository.save(product)
     }
 
     @Test
@@ -153,6 +150,15 @@ class ProductControllerTest(
         val expected = "Product with name '$name' already exists."
         RestAssured
             .given().log().all()
+            .body(Product(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/products")
+            .then().log().all()
+            .assertThat()
+            .statusCode(HttpStatus.CREATED.value())
+
+        RestAssured
+            .given().log().all()
             .body(Product(name = name, price = 2.0, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
@@ -164,18 +170,19 @@ class ProductControllerTest(
 
     @Test
     fun readProducts() {
+        productRepository.deleteAll()
         create()
-        create()
+        create("abc")
         val response = controller.getProducts()
-        assertThat(response.body?.size).isEqualTo(8)
+        assertThat(response.body?.size).isEqualTo(2)
         assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
     }
 
     @Test
     fun readProduct() {
         create()
-        create()
-        val response = controller.getProduct(2)
+        val product = create("abc")
+        val response = controller.getProduct(product.id)
         assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
     }
 
@@ -198,14 +205,13 @@ class ProductControllerTest(
 
     @Test
     fun update() {
-        val targetId = 1L
+        val product = create()
         val newProductForm =
             ProductForm(name = "new product", price = 1.6, imageUrl = "https://www.product.com/image/2")
-        create()
-        val response = controller.updateProduct(targetId, newProductForm)
+        val response = controller.updateProduct(product.id, newProductForm)
         assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
         val actual = response.body
-        assertThat(actual?.id).isEqualTo(targetId)
+        assertThat(actual?.id).isEqualTo(product.id)
         assertThat(actual?.name).isEqualTo(newProductForm.name)
         assertThat(actual?.price).isEqualTo(newProductForm.price)
         assertThat(actual?.imageUrl).isEqualTo(newProductForm.imageUrl)
@@ -267,9 +273,32 @@ class ProductControllerTest(
 
     @Test
     fun `update() - should return 400 when name of product already exists`() {
-        val targetId = 2L
-        val name = "Iron Man"
+        val name = "Super man"
+        val name2 = "Ultra man"
         val expected = "Product with name '$name' already exists."
+
+        RestAssured
+            .given().log().all()
+            .body(Product(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/products")
+            .then().log().all()
+            .assertThat()
+            .statusCode(HttpStatus.CREATED.value())
+
+        val product =
+            RestAssured
+                .given().log().all()
+                .body(Product(name = name2, price = 1.5, imageUrl = "https://www.product.com/image/1"))
+                .contentType(ContentType.JSON)
+                .`when`().post("/api/products")
+                .then().log().all()
+                .assertThat()
+                .statusCode(HttpStatus.CREATED.value())
+                .extract()
+
+        val targetId = product.body().jsonPath().getLong("id")
+
         RestAssured
             .given().log().all()
             .body(Product(id = targetId, name = name, price = 2.0, imageUrl = "https://www.product.com/image/1"))
@@ -283,10 +312,9 @@ class ProductControllerTest(
 
     @Test
     fun delete() {
-        create()
-        val response = controller.deleteProduct(1)
+        val product = create()
+        val response = controller.deleteProduct(product.id)
         assertThat(response.statusCode.value()).isEqualTo(HttpStatus.NO_CONTENT.value())
-        readProducts()
     }
 
     @Test

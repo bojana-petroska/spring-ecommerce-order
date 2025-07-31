@@ -6,6 +6,7 @@ import ecommerce.dto.LoginForm
 import ecommerce.dto.MemberResponse
 import ecommerce.dto.RegisterForm
 import ecommerce.model.Member
+import ecommerce.repository.MemberRepository
 import ecommerce.service.AuthService
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
@@ -16,19 +17,25 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.test.context.jdbc.Sql
+import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@Sql(
-    scripts = ["/sql/member.sql"],
-    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD,
-)
+@Transactional
 class AuthControllerTest(
     @Autowired private val controller: AuthController,
+    @Autowired private val memberRepository: MemberRepository,
 ) {
+    fun register(
+        email: String,
+        password: String,
+    ): Member {
+        val member = Member(email = email, password = password)
+        return memberRepository.save(member)
+    }
+
     @Test
     fun registerMember() {
-        val email = "test@email.com"
+        val email = "test@test.com"
         val password = "test1234"
         val testForm = RegisterForm(email, password)
         val response = controller.registerMember(testForm)
@@ -102,6 +109,13 @@ class AuthControllerTest(
             .contentType(ContentType.JSON)
             .`when`().post("/api/members/register")
             .then().log().all()
+
+        RestAssured
+            .given().log().all()
+            .body(Member(email = targetEmail, password = "test1234"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/members/register")
+            .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
             .body("errors.email", equalTo(expected))
@@ -111,6 +125,8 @@ class AuthControllerTest(
     fun loginMember() {
         val email = "san@htc.com"
         val password = "san1234"
+        val registerForm = RegisterForm(email, password)
+        controller.registerMember(registerForm)
         val testForm = LoginForm(email, password)
         val response = controller.loginMember(testForm)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
@@ -119,10 +135,18 @@ class AuthControllerTest(
 
     @Test
     fun `loginMember() - should login member and return 200 when form is valid`() {
+        val targetEmail = "dan@htc.com"
+        RestAssured
+            .given().log().all()
+            .body(Member(email = targetEmail, password = "test1234"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/members/register")
+            .then().log().all()
+
         val response =
             RestAssured
                 .given().log().all()
-                .body(Member(email = "san@htc.com", password = "san1234"))
+                .body(Member(email = targetEmail, password = "test1234"))
                 .contentType(ContentType.JSON)
                 .`when`().post("/api/members/login")
                 .then().log().all().extract()
@@ -161,9 +185,17 @@ class AuthControllerTest(
 
     @Test
     fun `loginMember() - should return 401 when email is invalid`() {
+        val targetEmail = "dan@htc.com"
         RestAssured
             .given().log().all()
-            .body(Member(email = "test@email.com", password = "test1234"))
+            .body(Member(email = targetEmail, password = "test1234"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/members/register")
+            .then().log().all()
+
+        RestAssured
+            .given().log().all()
+            .body(Member(email = "test123@email.com", password = "test1234"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/members/login")
             .then().log().all()
@@ -173,9 +205,17 @@ class AuthControllerTest(
 
     @Test
     fun `loginMember() - should return 401 when password is invalid`() {
+        val targetEmail = "dan@htc.com"
         RestAssured
             .given().log().all()
-            .body(Member(email = "dan@htc.com", password = "test1234"))
+            .body(Member(email = targetEmail, password = "test1234"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/members/register")
+            .then().log().all()
+
+        RestAssured
+            .given().log().all()
+            .body(Member(email = targetEmail, password = "invalid1234"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/members/login")
             .then().log().all()
@@ -185,11 +225,18 @@ class AuthControllerTest(
 
     @Test
     fun tokenLogin() {
-        val targetEmail = "dan@htc.com"
+        val targetEmail = "jason@htc.com"
+        RestAssured
+            .given().log().all()
+            .body(Member(email = targetEmail, password = "jason1234"))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/members/register")
+            .then().log().all()
+
         val accessToken =
             RestAssured
                 .given().log().all()
-                .body(LoginForm(targetEmail, "dan1234"))
+                .body(LoginForm(targetEmail, "jason1234"))
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .accept(MediaType.APPLICATION_JSON_VALUE)
                 .`when`().post("/api/members/login")

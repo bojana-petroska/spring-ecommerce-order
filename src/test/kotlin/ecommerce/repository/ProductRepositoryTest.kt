@@ -1,10 +1,12 @@
 package ecommerce.repository
 
-import org.assertj.core.api.Assertions
+import ecommerce.model.Product
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import practice.Product
+import org.springframework.data.repository.findByIdOrNull
 
 @DataJpaTest
 class ProductRepositoryTest {
@@ -15,8 +17,8 @@ class ProductRepositoryTest {
     fun save() {
         val expected = Product(name = "abc", price = 1.2, imageUrl = "https://sample.com/2")
         val actual = products.save(expected)
-        Assertions.assertThat(actual.id).isNotZero()
-        Assertions.assertThat(actual.name).isEqualTo(expected.name)
+        assertThat(actual.id).isNotZero()
+        assertThat(actual.name).isEqualTo(expected.name)
     }
 
     @Test
@@ -24,15 +26,25 @@ class ProductRepositoryTest {
         val product = Product(name = "abcd", price = 1.2, imageUrl = "https://sample.com/2")
         val returned = products.save(product)
         val actual = products.findById(returned.id).get()
-        Assertions.assertThat(actual.id).isNotZero()
-        Assertions.assertThat(actual.id).isEqualTo(returned.id)
-        Assertions.assertThat(actual.name).isEqualTo(product.name)
+        assertThat(actual.id).isNotZero()
+        assertThat(actual.id).isEqualTo(returned.id)
+        assertThat(actual.name).isEqualTo(product.name)
+    }
+
+    @Test
+    fun findByName() {
+        val product = Product(name = "abcd", price = 1.2, imageUrl = "https://sample.com/2")
+        val returned = products.save(product)
+        val actual = products.findByName("abcd").get()
+        assertThat(actual.id).isNotZero()
+        assertThat(actual.id).isEqualTo(returned.id)
+        assertThat(actual.name).isEqualTo(product.name)
     }
 
     @Test
     fun findAll() {
         val actual = products.findAll()
-        Assertions.assertThat(actual).isEmpty()
+        assertThat(actual).isEmpty()
     }
 
     @Test
@@ -40,7 +52,50 @@ class ProductRepositoryTest {
         save()
         findById()
         val actual = products.findAll()
-        Assertions.assertThat(actual).isNotEmpty()
-        Assertions.assertThat(actual).hasSize(2)
+        assertThat(actual).isNotEmpty()
+        assertThat(actual).hasSize(2)
+    }
+
+    @Test
+    fun update() {
+        val newProduct = Product(name = "Iron body", price = 99.0, imageUrl = "https://alexnsan.comics/imageurl/123")
+        val product = products.save(newProduct)
+
+        val expectedName = "abc"
+        val expectedPrice = 1.2
+        val expectedImage = "https://sample.com/2"
+
+        product.changeName(expectedName)
+        product.changePrice(expectedPrice)
+        product.changeImageUrl(expectedImage)
+
+        val target = products.findById(product.id).get()
+
+        assertThat(target.id).isEqualTo(product.id)
+        assertThat(target.name).isEqualTo(product.name)
+        assertThat(target.price).isEqualTo(product.price)
+        assertThat(target.imageUrl).isEqualTo(product.imageUrl)
+    }
+
+    @Test
+    fun delete() {
+        val newProduct = Product(name = "Iron body", price = 99.0, imageUrl = "https://alexnsan.comics/imageurl/123")
+        val product = products.save(newProduct)
+
+        products.delete(product)
+
+        val actual = products.findByIdOrNull(product.id)
+        assertThat(actual).isNull()
+    }
+
+    @Test
+    fun `findByName() - return true if a product with same name exists`() {
+        val target = products.findByName("Iron Man")
+        assertThat(target).isNotNull()
+    }
+
+    @Test
+    fun `findByName() - throws an exception if a product with same name does not exist`() {
+        assertThrows<NoSuchElementException> { products.findByName("Iron Body").get() }
     }
 }

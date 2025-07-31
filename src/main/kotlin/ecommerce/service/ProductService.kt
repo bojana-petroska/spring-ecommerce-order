@@ -1,61 +1,49 @@
 package ecommerce.service
 
-import ecommerce.controller.api.ProductController.Companion.MESSAGE_PRODUCT_NOT_FOUND
-import ecommerce.controller.api.ProductController.Companion.MESSAGE_UNEXPECTED_PRODUCT_ACTION
-import ecommerce.dao.JdbcProductDao
 import ecommerce.dto.ProductForm
 import ecommerce.exception.InternalServerErrorException
 import ecommerce.exception.NotFoundException
 import ecommerce.exception.ProductNameAlreadyExistsException
 import ecommerce.model.Product
-import org.springframework.http.ResponseEntity
+import ecommerce.repository.ProductRepository
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 @Service
-class ProductService(private val jdbcProductDao: JdbcProductDao) {
+class ProductService(private val productRepository: ProductRepository) {
     fun insert(form: ProductForm): Product {
         checkProductNameExists(form.name)
         val product = ProductForm.toProduct(form)
-        val id = jdbcProductDao.insert(product)
-        return jdbcProductDao.findById(id)
-            ?: throw InternalServerErrorException("ProductService.insert() - Product with ID $id not found")
+        val savedProduct = productRepository.save(product)
+        return productRepository.findByIdOrNull(savedProduct.id)
+            ?: throw InternalServerErrorException("ProductService.insert() - Product with ID ${savedProduct.id} not found")
     }
 
-    fun findAll(): List<Product> = jdbcProductDao.findAll()
+    fun findAll(): List<Product> = productRepository.findAll()
 
-    fun findById(id: Long): Product? = jdbcProductDao.findById(id)
+    fun findById(id: Long): Product = productRepository.findByIdOrNull(id) ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
 
     fun update(
         form: ProductForm,
         id: Long,
-    ): ResponseEntity<Product> {
+    ): Product {
         val originalProduct =
-            jdbcProductDao.findById(id)
+            productRepository.findByIdOrNull(id)
                 ?: throw InternalServerErrorException("ProductService.update() - Product with ID $id not found")
         val originalName = originalProduct.name
         checkProductNameExists(form.name, originalName)
         val product = ProductForm.toEntity(form, id)
-        val affectedRows = jdbcProductDao.update(product)
-        when (affectedRows) {
-            1 -> {
-                val target =
-                    jdbcProductDao.findById(id)
-                        ?: throw InternalServerErrorException(MESSAGE_PRODUCT_NOT_FOUND)
-                return ResponseEntity.ok(target)
-            }
-            0 -> throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
-            else -> throw InternalServerErrorException(MESSAGE_UNEXPECTED_PRODUCT_ACTION)
-        }
+        product.changeName(form.name)
+        product.changePrice(form.price)
+        product.changeImageUrl(form.imageUrl)
+        productRepository.save(product)
+        return productRepository.findByIdOrNull(id)
+            ?: throw InternalServerErrorException(MESSAGE_PRODUCT_NOT_FOUND)
     }
 
-    fun delete(id: Long): ResponseEntity<Void> {
-        findById(id) ?: throw NotFoundException("Product not found - ID: $id")
-        val affectedRows = jdbcProductDao.delete(id)
-        when (affectedRows) {
-            1 -> return ResponseEntity.noContent().build()
-            0 -> throw NotFoundException("Product not found - ID: $id")
-            else -> throw InternalServerErrorException(MESSAGE_UNEXPECTED_PRODUCT_ACTION)
-        }
+    fun delete(id: Long) {
+        val product = productRepository.findByIdOrNull(id) ?: throw NotFoundException("Product not found - ID: $id")
+        productRepository.delete(product)
     }
 
     private fun checkProductNameExists(
@@ -64,9 +52,13 @@ class ProductService(private val jdbcProductDao: JdbcProductDao) {
     ) {
         if (originalName != null && name == originalName) {
             return
-        } else if (jdbcProductDao.existsByName(name)) {
+        } else if (productRepository.findByName(name).isPresent) {
             val message = "Product with name '$name' already exists."
             throw ProductNameAlreadyExistsException(message)
         }
+    }
+
+    companion object {
+        const val MESSAGE_PRODUCT_NOT_FOUND = "Product not found"
     }
 }

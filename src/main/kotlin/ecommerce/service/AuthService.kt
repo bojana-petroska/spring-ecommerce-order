@@ -1,46 +1,54 @@
 package ecommerce.service
 
 import ecommerce.auth.JwtTokenProvider
-import ecommerce.dao.JdbcMemberDao
 import ecommerce.dto.AuthResponse
 import ecommerce.dto.LoginForm
 import ecommerce.dto.RegisterForm
 import ecommerce.exception.AuthorizationException
 import ecommerce.exception.InternalServerErrorException
 import ecommerce.exception.MemberEmailAlreadyExistsException
+import ecommerce.model.Cart
 import ecommerce.model.Member
+import ecommerce.repository.CartRepository
+import ecommerce.repository.MemberRepository
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class AuthService(
-    private val jdbcMemberDao: JdbcMemberDao,
+    private val memberRepository: MemberRepository,
+    private val cartRepository: CartRepository,
     private val jwtTokenProvider: JwtTokenProvider,
 ) {
     fun registerMember(form: RegisterForm): Member {
         checkMemberEmailExists(form.email)
         val member = Member.from(form)
-        val id = jdbcMemberDao.insert(member)
-        return jdbcMemberDao.findById(id)
+        val savedMember = memberRepository.save(member)
+        val cart = Cart(member = savedMember)
+        cartRepository.save(cart)
+        return memberRepository.findByIdOrNull(savedMember.id)
             ?: throw InternalServerErrorException(MESSAGE_MEMBER_NOT_FOUND)
     }
 
     fun loginMember(form: LoginForm): AuthResponse {
-        val member = jdbcMemberDao.findByEmail(form.email) ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
+        val member = memberRepository.findByEmail(form.email).getOrNull() ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
         if (member.password != form.password) throw AuthorizationException(MESSAGE_INVALID_PASSWORD)
         val accessToken = jwtTokenProvider.createToken(member.email)
         return AuthResponse(accessToken)
     }
 
-    fun findMemberById(id: Long): Member? = jdbcMemberDao.findById(id)
+    fun findMemberById(id: Long): Member? = memberRepository.findByIdOrNull(id)
 
-    fun findMemberByEmail(email: String): Member? = jdbcMemberDao.findByEmail(email)
+    fun findMemberByEmail(email: String): Member? =
+        memberRepository.findByEmail(email).getOrNull() ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
 
     fun findMemberByToken(token: String): Member {
         if (!jwtTokenProvider.validateToken(token)) {
             throw AuthorizationException(MESSAGE_INVALID_TOKEN)
         }
         val email = jwtTokenProvider.getPayload(token)
-        val member = jdbcMemberDao.findByEmail(email) ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
+        val member = memberRepository.findByEmail(email).getOrNull() ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
         return member
     }
 
@@ -50,7 +58,7 @@ class AuthService(
     ) {
         if (originalEmail != null && email == originalEmail) {
             return
-        } else if (jdbcMemberDao.existsByEmail(email)) {
+        } else if (memberRepository.findByEmail(email).isPresent) {
             throw MemberEmailAlreadyExistsException(MESSAGE_EMAIL_ALREADY_EXISTS)
         }
     }

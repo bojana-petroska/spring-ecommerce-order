@@ -2,10 +2,9 @@ package ecommerce.controller.api
 
 import ecommerce.dto.CartAddItemForm
 import ecommerce.dto.CartUpdateQuantityForm
-import ecommerce.exception.InternalServerErrorException
 import ecommerce.model.CartItem
 import ecommerce.model.Member
-import ecommerce.service.CartService
+import ecommerce.service.CartItemService
 import ecommerce.ui.LoginMember
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -21,14 +20,14 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/cart")
 class CartController(
-    private val cartService: CartService,
+    private val cartItemService: CartItemService,
 ) {
     @GetMapping
     fun viewCart(
         @LoginMember member: Member,
     ): ResponseEntity<List<CartItem>> {
-        val memberId = member.id ?: throw InternalServerErrorException(MESSAGE_AUTH_FAILED)
-        val cartItems = cartService.getCart(memberId)
+        val memberId = member.id
+        val cartItems = cartItemService.getCartItemsByMemberId(memberId)
         return ResponseEntity.ok(cartItems)
     }
 
@@ -37,8 +36,9 @@ class CartController(
         @RequestBody @Valid cartForm: CartAddItemForm,
         @LoginMember member: Member,
     ): ResponseEntity<String> {
-        val memberId = member.id ?: throw InternalServerErrorException(MESSAGE_AUTH_FAILED)
-        return cartService.addToCart(memberId, cartForm.productId, cartForm.quantity)
+        val memberId = member.id
+        val cartItem = cartItemService.addCartItem(memberId, cartForm.productId, cartForm.quantity)
+        return ResponseEntity.ok(MESSAGE_ADD_SUCCESS)
     }
 
     @PutMapping("/{productId}")
@@ -47,8 +47,9 @@ class CartController(
         @RequestBody @Valid cartForm: CartUpdateQuantityForm,
         @LoginMember member: Member,
     ): ResponseEntity<String> {
-        val memberId = member.id ?: throw InternalServerErrorException(MESSAGE_AUTH_FAILED)
-        return cartService.updateQuantity(memberId, productId, cartForm.quantity)
+        val memberId = member.id
+        val message = cartItemService.updateQuantity(memberId, productId, cartForm.quantity)
+        return ResponseEntity.ok(message)
     }
 
     @DeleteMapping("/{productId}")
@@ -56,11 +57,12 @@ class CartController(
         @PathVariable productId: Long,
         @LoginMember member: Member,
     ): ResponseEntity<String> {
-        val memberId = member.id ?: throw InternalServerErrorException(MESSAGE_AUTH_FAILED)
-        return cartService.removeFromCart(memberId, productId)
+        val memberId = member.id
+        val message = cartItemService.removeCartItem(memberId, productId)
+        return ResponseEntity.ok(message)
     }
 
     companion object {
-        const val MESSAGE_AUTH_FAILED = "auth failed"
+        const val MESSAGE_ADD_SUCCESS = "Item added to cart"
     }
 }
