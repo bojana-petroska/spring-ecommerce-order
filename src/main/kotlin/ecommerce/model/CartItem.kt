@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "cart_items")
@@ -21,9 +22,8 @@ class CartItem(
     var product: Product,
     @Column(nullable = false)
     var quantity: Int = 1,
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "cart_id", referencedColumnName = "id")
-//    var cart: Cart? = null,
+    @Column(nullable = false)
+    val createdAt: LocalDateTime = LocalDateTime.now(),
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
 ) {
