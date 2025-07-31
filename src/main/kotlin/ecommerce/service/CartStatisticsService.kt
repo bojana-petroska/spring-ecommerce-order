@@ -4,15 +4,11 @@ import ecommerce.dto.ActiveMemberInfo
 import ecommerce.dto.TopProductStats
 import ecommerce.model.Product
 import ecommerce.repository.CartItemRepository
-import ecommerce.repository.MemberRepository
-import ecommerce.repository.ProductRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
 class CartStatisticsService(
-    private val memberRepository: MemberRepository,
-    private val productRepository: ProductRepository,
     private val cartItemRepository: CartItemRepository,
 ) {
     fun getTop5AddedProductsInLast30Days(): List<TopProductStats> {
@@ -40,7 +36,6 @@ class CartStatisticsService(
     }
 
     fun getActiveMembersInLast7Days(): List<ActiveMemberInfo> {
-        val members = memberRepository.findAll()
         val cartItems = cartItemRepository.findAll()
         val filteredCartItems =
             cartItems

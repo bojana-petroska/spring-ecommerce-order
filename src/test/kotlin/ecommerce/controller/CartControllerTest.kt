@@ -1,12 +1,13 @@
 package ecommerce.controller
 
 import ecommerce.controller.api.CartController
+import ecommerce.dto.AuthResponse
 import ecommerce.dto.CartAddItemForm
 import ecommerce.dto.CartUpdateQuantityForm
+import ecommerce.dto.LoginForm
 import ecommerce.exception.NotFoundException
 import ecommerce.model.Member
 import ecommerce.model.Product
-import ecommerce.repository.CartRepository
 import ecommerce.repository.MemberRepository
 import ecommerce.repository.ProductRepository
 import ecommerce.service.CartItemService
@@ -19,107 +20,90 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.transaction.annotation.Transactional
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 class CartControllerTest(
     @Autowired private val controller: CartController,
     @Autowired private val productRepository: ProductRepository,
     @Autowired private val memberRepository: MemberRepository,
-    @Autowired private val cartRepository: CartRepository,
+    @Autowired private val cartItemService: CartItemService,
 ) {
-    @Autowired
-    private lateinit var cartItemService: CartItemService
+    @LocalServerPort
+    private var port: Int = 0
 
     @BeforeEach
-    fun setup() {
-        memberRepository.deleteAll()
-        cartRepository.deleteAll()
+    fun setUp() {
+        RestAssured.port = port
     }
 
     @Test
     fun addToCart() {
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
-        val member = Member(email = "test@test.com", password = "test1234")
-        val savedMember = memberRepository.save(member)
+        val savedProduct = productRepository.findAll().last()
+        val savedMember = memberRepository.findAll().last()
         val form = CartAddItemForm(savedProduct.id, 1)
         val expected = CartController.MESSAGE_ADD_SUCCESS
         val response = controller.addToCart(form, savedMember)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(response.body).isEqualTo(expected)
     }
-//
-//    @Test
-//    fun `addToCart() - return 200 OK when credential is valid`() {
-//        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-//        val savedProduct = productRepository.save(product)
-//        val email = "test@test.com"
-//        val password = "test1234"
-//        val quantity = 1
-//        val expected = CartController.MESSAGE_ADD_SUCCESS
-//
-//        val productId = RestAssured
-//            .given().log().all()
-//            .body(product)
-//            .contentType(ContentType.JSON)
-//            .`when`().post("/api/products")
-//            .then().log().all()
-//            .extract().body().jsonPath().getLong("id")
-//
-//        RestAssured
-//            .given().log().all()
-//            .body(Member(email = email, password = password))
-//            .contentType(ContentType.JSON)
-//            .`when`().post("/api/members/register")
-//            .then().log().all()
-//
-//        val accessToken =
-//            RestAssured
-//                .given().log().all()
-//                .body(LoginForm(email, password))
-//                .contentType(MediaType.APPLICATION_JSON_VALUE)
-//                .accept(MediaType.APPLICATION_JSON_VALUE)
-//                .`when`().post("/api/members/login")
-//                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
-//
-//        RestAssured
-//            .given().log().all()
-//            .header("Authorization", "Bearer $accessToken")
-//            .body(CartAddItemForm(productId, quantity))
-//            .contentType(ContentType.JSON)
-//            .`when`().post("/api/cart")
-//            .then().log().all()
-//            .assertThat().statusCode(HttpStatus.OK.value())
-//            .body(equalTo(expected))
-//    }
-//
-//    @Test
-//    fun `addToCart() - return 401 Unauthorized when credential is invalid`() {
-//        val productId = PRODUCT_ID
-//        val quantity = 1
-//
-//        val accessToken =
-//            RestAssured
-//                .given().log().all()
-//                .body(LoginForm(LOGIN_EMAIL, LOGIN_PASSWORD))
-//                .contentType(MediaType.APPLICATION_JSON_VALUE)
-//                .accept(MediaType.APPLICATION_JSON_VALUE)
-//                .`when`().post("/api/members/login")
-//                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
-//
-//        val contaminatedToken = accessToken + 123
-//        RestAssured
-//            .given().log().all()
-//            .header("Authorization", "Bearer $contaminatedToken")
-//            .body(CartAddItemForm(productId, quantity))
-//            .contentType(ContentType.JSON)
-//            .`when`().post("/api/cart")
-//            .then().log().all()
-//            .assertThat().statusCode(HttpStatus.UNAUTHORIZED.value())
-//    }
+
+    @Test
+    fun `addToCart() - return 200 OK when credential is valid`() {
+        val product = productRepository.findAll().first()
+        val email = "min@htc.com"
+        val password = "min1234"
+        val quantity = 1
+        val expected = CartController.MESSAGE_ADD_SUCCESS
+
+        val accessToken =
+            RestAssured
+                .given().log().all()
+                .body(LoginForm(email, password))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .`when`().post("/api/members/login")
+                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
+
+        RestAssured
+            .given().log().all()
+            .header("Authorization", "Bearer $accessToken")
+            .body(CartAddItemForm(product.id, quantity))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/cart")
+            .then().log().all()
+            .assertThat().statusCode(HttpStatus.OK.value())
+            .body(equalTo(expected))
+    }
+
+    @Test
+    fun `addToCart() - return 401 Unauthorized when credential is invalid`() {
+        val productId = PRODUCT_ID
+        val quantity = 1
+
+        val accessToken =
+            RestAssured
+                .given().log().all()
+                .body(LoginForm(LOGIN_EMAIL, LOGIN_PASSWORD))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .`when`().post("/api/members/login")
+                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
+
+        val contaminatedToken = accessToken + 123
+        RestAssured
+            .given().log().all()
+            .header("Authorization", "Bearer $contaminatedToken")
+            .body(CartAddItemForm(productId, quantity))
+            .contentType(ContentType.JSON)
+            .`when`().post("/api/cart")
+            .then().log().all()
+            .assertThat().statusCode(HttpStatus.UNAUTHORIZED.value())
+    }
 
     @Test
     fun `Form validation failure when 'productId' is blank`() {

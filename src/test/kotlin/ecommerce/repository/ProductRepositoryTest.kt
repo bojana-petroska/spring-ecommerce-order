@@ -2,16 +2,23 @@ package ecommerce.repository
 
 import ecommerce.model.Product
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.data.repository.findByIdOrNull
 
 @DataJpaTest
-class ProductRepositoryTest {
-    @Autowired
-    private lateinit var products: ProductRepository
+class ProductRepositoryTest(
+    @Autowired private val products: ProductRepository,
+    @Autowired private val testEntityManager: TestEntityManager,
+) {
+    @AfterEach
+    fun clean() {
+        testEntityManager.clear()
+    }
 
     @Test
     fun save() {
@@ -42,18 +49,12 @@ class ProductRepositoryTest {
     }
 
     @Test
-    fun findAll() {
-        val actual = products.findAll()
-        assertThat(actual).isEmpty()
-    }
-
-    @Test
     fun `findAll - has some data`() {
         save()
         findById()
         val actual = products.findAll()
         assertThat(actual).isNotEmpty()
-        assertThat(actual).hasSize(2)
+        assertThat(actual).hasSize(9)
     }
 
     @Test

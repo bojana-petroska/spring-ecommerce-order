@@ -9,19 +9,29 @@ import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 class ProductControllerTest(
     @Autowired private val productRepository: ProductRepository,
     @Autowired private val controller: ProductController,
 ) {
+    @LocalServerPort
+    private var port: Int = 0
+
+    @BeforeEach
+    fun setUp() {
+        RestAssured.port = port
+    }
+
     fun create(productName: String = "product1"): Product {
         val product = Product(name = productName, price = 1.5, imageUrl = "https://www.product.com/image/1")
         return productRepository.save(product)
@@ -148,14 +158,6 @@ class ProductControllerTest(
     fun `create() - should return 400 when name of product already exists`() {
         val name = "Iron Man"
         val expected = "Product with name '$name' already exists."
-        RestAssured
-            .given().log().all()
-            .body(Product(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/products")
-            .then().log().all()
-            .assertThat()
-            .statusCode(HttpStatus.CREATED.value())
 
         RestAssured
             .given().log().all()
@@ -168,15 +170,15 @@ class ProductControllerTest(
             .body("errors.name", equalTo(expected))
     }
 
-//    @Test
-//    fun readProducts() {
-//        productRepository.deleteAll()
-//        create()
-//        create("abc")
-//        val response = controller.getProducts()
-//        assertThat(response.body?.size).isEqualTo(2)
-//        assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
-//    }
+    @Test
+    fun readProducts() {
+        val pageNumber = 0
+        val pageSize = 10
+        val sortBy = "name"
+        val response = controller.getProducts(pageNumber = pageNumber, pageSize = pageSize, sortBy = sortBy)
+        assertThat(response.body?.size).isEqualTo(pageSize)
+        assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
+    }
 
     @Test
     fun `getProducts() - return OK for pagination`() {

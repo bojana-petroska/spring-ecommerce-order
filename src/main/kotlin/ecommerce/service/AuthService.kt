@@ -13,7 +13,6 @@ import ecommerce.repository.CartRepository
 import ecommerce.repository.MemberRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import kotlin.jvm.optionals.getOrNull
 
 @Service
 class AuthService(
@@ -31,7 +30,7 @@ class AuthService(
     }
 
     fun loginMember(form: LoginForm): AuthResponse {
-        val member = memberRepository.findByEmail(form.email).getOrNull() ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
+        val member = memberRepository.findByEmail(form.email) ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
         if (member.password != form.password) throw AuthorizationException(MESSAGE_INVALID_PASSWORD)
         val accessToken = jwtTokenProvider.createToken(member.email)
         return AuthResponse(accessToken)
@@ -40,14 +39,14 @@ class AuthService(
     fun findMemberById(id: Long): Member? = memberRepository.findByIdOrNull(id)
 
     fun findMemberByEmail(email: String): Member? =
-        memberRepository.findByEmail(email).getOrNull() ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
+        memberRepository.findByEmail(email) ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
 
     fun findMemberByToken(token: String): Member {
         if (!jwtTokenProvider.validateToken(token)) {
             throw AuthorizationException(MESSAGE_INVALID_TOKEN)
         }
         val email = jwtTokenProvider.getPayload(token)
-        val member = memberRepository.findByEmail(email).getOrNull() ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
+        val member = memberRepository.findByEmail(email) ?: throw AuthorizationException(MESSAGE_INVALID_EMAIL)
         return member
     }
 
@@ -57,7 +56,7 @@ class AuthService(
     ) {
         if (originalEmail != null && email == originalEmail) {
             return
-        } else if (memberRepository.findByEmail(email).isPresent) {
+        } else if (memberRepository.findByEmail(email) != null) {
             throw MemberEmailAlreadyExistsException(MESSAGE_EMAIL_ALREADY_EXISTS)
         }
     }

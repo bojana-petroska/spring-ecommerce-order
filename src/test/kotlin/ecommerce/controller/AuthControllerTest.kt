@@ -9,22 +9,39 @@ import ecommerce.model.Member
 import ecommerce.repository.MemberRepository
 import ecommerce.service.AuthService
 import io.restassured.RestAssured
+import io.restassured.RestAssured.port
 import io.restassured.http.ContentType
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.transaction.annotation.Transactional
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 class AuthControllerTest(
     @Autowired private val controller: AuthController,
     @Autowired private val memberRepository: MemberRepository,
 ) {
+    @LocalServerPort
+    private var port: Int = 0
+
+    @BeforeEach
+    fun setUp() {
+        RestAssured.port = port
+    }
+
+    @AfterEach
+    fun cleanUp() {
+        memberRepository.deleteAll()
+    }
+
     fun register(
         email: String,
         password: String,
@@ -125,8 +142,8 @@ class AuthControllerTest(
     fun loginMember() {
         val email = "san@htc.com"
         val password = "san1234"
-        val registerForm = RegisterForm(email, password)
-        controller.registerMember(registerForm)
+//        val registerForm = RegisterForm(email, password)
+//        controller.registerMember(registerForm)
         val testForm = LoginForm(email, password)
         val response = controller.loginMember(testForm)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
@@ -136,17 +153,11 @@ class AuthControllerTest(
     @Test
     fun `loginMember() - should login member and return 200 when form is valid`() {
         val targetEmail = "dan@htc.com"
-        RestAssured
-            .given().log().all()
-            .body(Member(email = targetEmail, password = "test1234"))
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/members/register")
-            .then().log().all()
 
         val response =
             RestAssured
                 .given().log().all()
-                .body(Member(email = targetEmail, password = "test1234"))
+                .body(Member(email = targetEmail, password = "dan1234"))
                 .contentType(ContentType.JSON)
                 .`when`().post("/api/members/login")
                 .then().log().all().extract()

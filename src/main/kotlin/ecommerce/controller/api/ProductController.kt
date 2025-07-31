@@ -31,12 +31,6 @@ class ProductController(private val productService: ProductService) {
         return ResponseEntity.created(uri).body(product)
     }
 
-//    @GetMapping
-//    fun getProducts(): ResponseEntity<List<Product>> {
-//        val products = productService.findAll()
-//        return ResponseEntity.ok(products)
-//    }
-
     @GetMapping
     fun getProducts(
         @RequestParam(defaultValue = "0") pageNumber: Int,

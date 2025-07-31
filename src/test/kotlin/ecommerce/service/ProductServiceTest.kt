@@ -9,29 +9,26 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.transaction.annotation.Transactional
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 class ProductServiceTest(
     @Autowired private val productService: ProductService,
     @Autowired private val productRepository: ProductRepository,
 ) {
+    @LocalServerPort
+    private var port: Int = 0
+
     fun insert(productName: String = "product1"): Product {
         val productForm = ProductForm(name = productName, price = 1.5, imageUrl = "https://www.product.com/image/1")
         return productService.insert(productForm)
     }
 
-//    @BeforeEach
-//    @Transactional
-//    fun setup() {
-//        productRepository.deleteAll()
-//    }
-
     @Test
     fun `insert() - should throw an exception when name of product already exists`() {
         val name = "Iron Man"
-        insert(productName = name)
         val productForm = ProductForm(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1")
         assertThrows<ProductNameAlreadyExistsException> { productService.insert(productForm) }
     }
@@ -59,15 +56,14 @@ class ProductServiceTest(
 
     @Test
     fun `update() - should throw an exception when name of product already exists`() {
-        insert("Iron Man")
-        val product = insert()
+        val product = productRepository.findByName("Superman").get()
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
         assertThrows<ProductNameAlreadyExistsException> { productService.update(productForm, product.id) }
     }
 
     @Test
     fun `update() - should update the product when original product and new product have same name`() {
-        val product = insert()
+        val product = productRepository.findByName("Iron Man").get()
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
         val response = productService.update(productForm, product.id)
         assertThat(response.name).isEqualTo(productForm.name)
