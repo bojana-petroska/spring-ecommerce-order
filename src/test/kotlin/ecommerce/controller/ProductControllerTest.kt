@@ -168,14 +168,58 @@ class ProductControllerTest(
             .body("errors.name", equalTo(expected))
     }
 
+//    @Test
+//    fun readProducts() {
+//        productRepository.deleteAll()
+//        create()
+//        create("abc")
+//        val response = controller.getProducts()
+//        assertThat(response.body?.size).isEqualTo(2)
+//        assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
+//    }
+
     @Test
-    fun readProducts() {
-        productRepository.deleteAll()
-        create()
-        create("abc")
-        val response = controller.getProducts()
-        assertThat(response.body?.size).isEqualTo(2)
-        assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
+    fun `getProducts() - return OK for pagination`() {
+        val pageNumber = 0
+        val pageSize = 10
+        val sortBy = "name"
+        RestAssured
+            .given().log().all()
+            .contentType(ContentType.JSON)
+            .`when`().get("/api/products?pageNumber=$pageNumber&pageSize=$pageSize&sortBy=$sortBy")
+            .then().log().all()
+            .assertThat()
+            .statusCode(HttpStatus.OK.value())
+    }
+
+    @Test
+    fun `getProducts() - return number of product per page size`() {
+        val pageNumber = 0
+        val pageSize = 5
+        val sortBy = "name"
+        val response =
+            RestAssured
+                .given().log().all()
+                .contentType(ContentType.JSON)
+                .`when`().get("/api/products?pageNumber=$pageNumber&pageSize=$pageSize&sortBy=$sortBy")
+                .then().log().all().extract()
+
+        val actual = response.jsonPath().getList<Map<String, Any>>("content")
+        assertThat(actual).hasSize(pageSize)
+    }
+
+    @Test
+    fun `getProducts() - should throw an exception for pagination`() {
+        val pageNumber = 0
+        val pageSize = 0
+        val sortBy = "name"
+        RestAssured
+            .given().log().all()
+            .contentType(ContentType.JSON)
+            .`when`().get("/api/products?pageNumber=$pageNumber&pageSize=$pageSize&sortBy=$sortBy")
+            .then().log().all()
+            .assertThat()
+            .statusCode(HttpStatus.BAD_REQUEST.value())
     }
 
     @Test

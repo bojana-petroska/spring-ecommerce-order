@@ -5,7 +5,6 @@ import ecommerce.exception.ProductNameAlreadyExistsException
 import ecommerce.model.Product
 import ecommerce.repository.ProductRepository
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,11 +22,11 @@ class ProductServiceTest(
         return productService.insert(productForm)
     }
 
-    @BeforeEach
-    @Transactional
-    fun setup() {
-        productRepository.deleteAll()
-    }
+//    @BeforeEach
+//    @Transactional
+//    fun setup() {
+//        productRepository.deleteAll()
+//    }
 
     @Test
     fun `insert() - should throw an exception when name of product already exists`() {
@@ -45,6 +44,17 @@ class ProductServiceTest(
         assertThat(result.name).isEqualTo(productForm.name)
         assertThat(result.price).isEqualTo(productForm.price)
         assertThat(result.imageUrl).isEqualTo(productForm.imageUrl)
+    }
+
+    @Test
+    fun `getPaginatedProducts() - should return number of products with page size`() {
+        val products = productService.getPaginatedProducts(0, 5, "name")
+        assertThat(products.size).isEqualTo(5)
+    }
+
+    @Test
+    fun `getPaginatedProducts() - should throw an exception when page size is not valid`() {
+        assertThrows<IllegalArgumentException> { productService.getPaginatedProducts(0, 0, "name") }
     }
 
     @Test

@@ -36,6 +36,14 @@ class GlobalExceptionHandler {
         return ResponseEntity.internalServerError().build()
     }
 
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handlerIllegalArgumentException(e: Exception): ResponseEntity<Map<String, Any>> {
+        println("IllegalArgumentException occurred: " + e.message)
+        val error = mapOf("page" to e.message)
+        val errorBody = mapOf("errors" to error)
+        return ResponseEntity.badRequest().body(errorBody)
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<Map<String, Any>> {
         val errors =

@@ -6,6 +6,9 @@ import ecommerce.exception.NotFoundException
 import ecommerce.exception.ProductNameAlreadyExistsException
 import ecommerce.model.Product
 import ecommerce.repository.ProductRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
@@ -17,6 +20,14 @@ class ProductService(private val productRepository: ProductRepository) {
         val savedProduct = productRepository.save(product)
         return productRepository.findByIdOrNull(savedProduct.id)
             ?: throw InternalServerErrorException("ProductService.insert() - Product with ID ${savedProduct.id} not found")
+    }
+
+    fun getPaginatedProducts(
+        pageNumber: Int,
+        pageSize: Int,
+        sortBy: String = "name",
+    ): Page<Product> {
+        return productRepository.findAll(PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
     }
 
     fun findAll(): List<Product> = productRepository.findAll()

@@ -5,6 +5,7 @@ import ecommerce.exception.ProductNameAlreadyExistsException
 import ecommerce.model.Product
 import ecommerce.service.ProductService
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
@@ -29,10 +31,24 @@ class ProductController(private val productService: ProductService) {
         return ResponseEntity.created(uri).body(product)
     }
 
+//    @GetMapping
+//    fun getProducts(): ResponseEntity<List<Product>> {
+//        val products = productService.findAll()
+//        return ResponseEntity.ok(products)
+//    }
+
     @GetMapping
-    fun getProducts(): ResponseEntity<List<Product>> {
-        val products = productService.findAll()
-        return ResponseEntity.ok(products)
+    fun getProducts(
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "name") sortBy: String,
+    ): ResponseEntity<Page<Product>> {
+        val productPage: Page<Product> =
+            when (sortBy.isEmpty()) {
+                true -> productService.getPaginatedProducts(pageNumber, pageSize)
+                false -> productService.getPaginatedProducts(pageNumber, pageSize, sortBy)
+            }
+        return ResponseEntity.ok(productPage)
     }
 
     @GetMapping("{id}")
