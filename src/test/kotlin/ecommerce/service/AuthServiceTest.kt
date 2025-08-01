@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -20,15 +19,6 @@ class AuthServiceTest(
     @Autowired private val jwtTokenProvider: JwtTokenProvider,
     @Autowired private val authService: AuthService,
 ) {
-    @LocalServerPort
-    private var port: Int = 0
-
-    fun register(email: String): Member {
-        val password = "test1234"
-        val registerForm = RegisterForm(email, password)
-        return authService.registerMember(registerForm)
-    }
-
     @Test
     fun `registerMember() - should throw an exception when email already exists`() {
         val email = "dan@htc.com"

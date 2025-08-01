@@ -2,7 +2,6 @@ package ecommerce.service
 
 import ecommerce.exception.NotFoundException
 import ecommerce.model.Member
-import ecommerce.model.Product
 import ecommerce.repository.CartItemRepository
 import ecommerce.repository.MemberRepository
 import ecommerce.repository.ProductRepository
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,15 +21,11 @@ class CartItemServiceTest(
     @Autowired private val productRepository: ProductRepository,
     @Autowired private val memberRepository: MemberRepository,
 ) {
-    @LocalServerPort
-    private var port: Int = 0
-
     @Test
     fun getCartItemsByMemberId() {
         val member = Member(email = "test@test.com", password = "test1234")
         val registeredMember = memberRepository.save(member)
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1)
 
         val pageNumber = 0
@@ -58,8 +52,7 @@ class CartItemServiceTest(
     fun addCartItem() {
         val member = Member(email = "test@test.com", password = "test1234")
         val registeredMember = memberRepository.save(member)
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val savedItem = cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1)
 
         assertThat(savedItem.id).isNotNull()
@@ -87,8 +80,7 @@ class CartItemServiceTest(
     fun `addCartItem() - update quantity when the product already exists in the cart`() {
         val member = Member(email = "test@test.com", password = "test1234")
         val registeredMember = memberRepository.save(member)
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val savedItem = cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1)
         val target = cartItemService.addCartItem(registeredMember.id, savedProduct.id)
 
@@ -100,12 +92,11 @@ class CartItemServiceTest(
     fun updateItemQuantityInCart() {
         val member = Member(email = "test@test.com", password = "test1234")
         val registeredMember = memberRepository.save(member)
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val savedItem = cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1)
 
         val quantity = 20
-        cartItemService.updateQuantity(member.id, product.id, quantity)
+        cartItemService.updateQuantity(member.id, savedProduct.id, quantity)
         val cartItem = cartItemRepository.findByIdOrNull(savedItem.id)
         assertThat(cartItem).isNotNull()
         assertThat(cartItem?.quantity).isEqualTo(quantity)
@@ -115,11 +106,10 @@ class CartItemServiceTest(
     fun removeItemFromCart() {
         val member = Member(email = "test@test.com", password = "test1234")
         val registeredMember = memberRepository.save(member)
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val savedItem = cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1)
 
-        cartItemService.removeCartItem(member.id, product.id)
+        cartItemService.removeCartItem(member.id, savedProduct.id)
         val cartItem = cartItemRepository.findByIdOrNull(savedItem.id)
         assertThat(cartItem).isNull()
     }

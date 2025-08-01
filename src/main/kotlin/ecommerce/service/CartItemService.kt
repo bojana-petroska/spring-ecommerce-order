@@ -25,7 +25,6 @@ class CartItemService(
         val member =
             memberRepository.findByIdOrNull(memberId)
                 ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
-//        val sort = Sort.by("product_$sortBy").ascending()
         val pages = cartItemRepository.findAllByMemberOrderByProductNameAsc(member, PageRequest.of(pageNumber, pageSize))
         return pages
     }

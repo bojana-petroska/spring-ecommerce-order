@@ -4,7 +4,9 @@ import ecommerce.dto.ProductForm
 import ecommerce.exception.InternalServerErrorException
 import ecommerce.exception.NotFoundException
 import ecommerce.exception.ProductNameAlreadyExistsException
+import ecommerce.model.Option
 import ecommerce.model.Product
+import ecommerce.repository.OptionRepository
 import ecommerce.repository.ProductRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -13,11 +15,17 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 @Service
-class ProductService(private val productRepository: ProductRepository) {
+class ProductService(
+    private val productRepository: ProductRepository,
+    private val optionRepository: OptionRepository,
+) {
     fun insert(form: ProductForm): Product {
         nameExists(form.name)
-        val product = ProductForm.toProduct(form)
+        val option = Option(name = "none", quantity = 1)
+        val product = ProductForm.toProduct(form, listOf(option))
+        option.product = product
         val savedProduct = productRepository.save(product)
+        optionRepository.save(option)
         return productRepository.findByIdOrNull(savedProduct.id)
             ?: throw InternalServerErrorException("ProductService.insert() - Product with ID ${savedProduct.id} not found")
     }
@@ -30,8 +38,6 @@ class ProductService(private val productRepository: ProductRepository) {
         return productRepository.findAll(PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
     }
 
-    // fun findAll(): List<Product> = productRepository.findAll()
-
     fun findById(id: Long): Product = productRepository.findByIdOrNull(id) ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
 
     fun update(
@@ -43,7 +49,7 @@ class ProductService(private val productRepository: ProductRepository) {
                 ?: throw InternalServerErrorException("ProductService.update() - Product with ID $id not found")
         val originalName = originalProduct.name
         nameExists(form.name, originalName)
-        val product = ProductForm.toEntity(form, id)
+        val product = productRepository.findById(id).get()
         product.changeName(form.name)
         product.changePrice(form.price)
         product.changeImageUrl(form.imageUrl)
@@ -56,18 +62,6 @@ class ProductService(private val productRepository: ProductRepository) {
         val product = productRepository.findByIdOrNull(id) ?: throw NotFoundException("Product not found - ID: $id")
         productRepository.delete(product)
     }
-
-//    private fun checkProductNameExists(
-//        name: String,
-//        originalName: String? = null,
-//    ) {
-//        if (originalName != null && name == originalName) {
-//            return
-//        } else if (productRepository.findByName(name).isPresent) {
-//            val message = "Product with name '$name' already exists."
-//            throw ProductNameAlreadyExistsException(message)
-//        }
-//    }
 
     fun nameExists(
         name: String,

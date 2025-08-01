@@ -41,14 +41,6 @@ class AuthControllerTest(
         memberRepository.deleteAll()
     }
 
-    fun register(
-        email: String,
-        password: String,
-    ): Member {
-        val member = Member(email = email, password = password)
-        return memberRepository.save(member)
-    }
-
     @Test
     fun registerMember() {
         val email = "test@test.com"
@@ -141,8 +133,6 @@ class AuthControllerTest(
     fun loginMember() {
         val email = "san@htc.com"
         val password = "san1234"
-//        val registerForm = RegisterForm(email, password)
-//        controller.registerMember(registerForm)
         val testForm = LoginForm(email, password)
         val response = controller.loginMember(testForm)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)

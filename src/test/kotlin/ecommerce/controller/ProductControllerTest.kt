@@ -3,7 +3,6 @@ package ecommerce.controller
 import ecommerce.controller.api.ProductController
 import ecommerce.dto.ProductForm
 import ecommerce.exception.NotFoundException
-import ecommerce.model.Product
 import ecommerce.repository.ProductRepository
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
@@ -17,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
+import kotlin.collections.listOf
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
@@ -32,16 +32,11 @@ class ProductControllerTest(
         RestAssured.port = port
     }
 
-    fun create(productName: String = "product1"): Product {
-        val product = Product(name = productName, price = 1.5, imageUrl = "https://www.product.com/image/1")
-        return productRepository.save(product)
-    }
-
     @Test
     fun `create() - should insert product and return 201 when form is valid`() {
         RestAssured
             .given().log().all()
-            .body(Product(name = "product1 [new]", price = 1.5, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = "product1 [new]", price = 1.5, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
             .then().log().all()
@@ -54,7 +49,7 @@ class ProductControllerTest(
         val response =
             RestAssured
                 .given().log().all()
-                .body(Product(name = "", price = 1.5, imageUrl = "https://www.product.com/image/1"))
+                .body(ProductForm(name = "", price = 1.5, imageUrl = "https://www.product.com/image/1"))
                 .contentType(ContentType.JSON)
                 .`when`().post("/api/products")
                 .then().log().all().extract()
@@ -77,7 +72,7 @@ class ProductControllerTest(
         RestAssured
             .given().log().all()
             .body(
-                Product(
+                ProductForm(
                     name = "this is very long name",
                     price = 1.5,
                     imageUrl = "https://www.product.com/image/1",
@@ -96,7 +91,7 @@ class ProductControllerTest(
         val expected = "Contains unallowed character"
         RestAssured
             .given().log().all()
-            .body(Product(name = "I am product!", price = 1.5, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = "I am product!", price = 1.5, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
             .then().log().all()
@@ -110,7 +105,7 @@ class ProductControllerTest(
         val expected = "Product price must be greater than zero"
         RestAssured
             .given().log().all()
-            .body(Product(name = "base", price = 0.0, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = "base", price = 0.0, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
             .then().log().all()
@@ -124,7 +119,7 @@ class ProductControllerTest(
         val response =
             RestAssured
                 .given().log().all()
-                .body(Product(name = "base", price = 2.0, imageUrl = ""))
+                .body(ProductForm(name = "base", price = 2.0, imageUrl = ""))
                 .contentType(ContentType.JSON)
                 .`when`().post("/api/products")
                 .then().log().all().extract()
@@ -145,7 +140,7 @@ class ProductControllerTest(
         val expected = "Must start with 'https://'."
         RestAssured
             .given().log().all()
-            .body(Product(name = "base", price = 2.0, imageUrl = "ssh://www.product.com/image/1"))
+            .body(ProductForm(name = "base", price = 2.0, imageUrl = "ssh://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
             .then().log().all()
@@ -161,7 +156,7 @@ class ProductControllerTest(
 
         RestAssured
             .given().log().all()
-            .body(Product(name = name, price = 2.0, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = name, price = 2.0, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
             .then().log().all()
@@ -226,8 +221,7 @@ class ProductControllerTest(
 
     @Test
     fun readProduct() {
-        create()
-        val product = create("abc")
+        val product = productRepository.findAll().first()
         val response = controller.getProduct(product.id)
         assertThat(response.statusCode.value()).isEqualTo(HttpStatus.OK.value())
     }
@@ -251,7 +245,7 @@ class ProductControllerTest(
 
     @Test
     fun update() {
-        val product = create()
+        val product = productRepository.findAll().first()
         val newProductForm =
             ProductForm(name = "new product", price = 1.6, imageUrl = "https://www.product.com/image/2")
         val response = controller.updateProduct(product.id, newProductForm)
@@ -265,12 +259,13 @@ class ProductControllerTest(
 
     @Test
     fun `update() - should return 400 when name is blank`() {
-        val targetId = 1L
+        val product = productRepository.findAll().first()
+        val targetId = product.id
         val name = ""
         val response =
             RestAssured
                 .given().log().all()
-                .body(Product(id = targetId, name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
+                .body(ProductForm(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
                 .contentType(ContentType.JSON)
                 .`when`().put("/api/products/$targetId")
                 .then().log().all().extract()
@@ -289,11 +284,12 @@ class ProductControllerTest(
 
     @Test
     fun `update() - should return 400 when price is 0`() {
-        val targetId = 1L
+        val product = productRepository.findAll().first()
+        val targetId = product.id
         val expected = "Product price must be greater than zero"
         RestAssured
             .given().log().all()
-            .body(Product(id = targetId, name = "base", price = 0.0, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = "base", price = 0.0, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().put("/api/products/$targetId")
             .then().log().all()
@@ -304,11 +300,12 @@ class ProductControllerTest(
 
     @Test
     fun `update() - should return 400 when image URL is not valid`() {
-        val targetId = 1L
+        val product = productRepository.findAll().first()
+        val targetId = product.id
         val expected = "Must start with 'https://'."
         RestAssured
             .given().log().all()
-            .body(Product(name = "base", price = 2.0, imageUrl = "ssh://www.product.com/image/1"))
+            .body(ProductForm(name = "base", price = 2.0, imageUrl = "ssh://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().put("/api/products/$targetId")
             .then().log().all()
@@ -319,35 +316,16 @@ class ProductControllerTest(
 
     @Test
     fun `update() - should return 400 when name of product already exists`() {
-        val name = "Super man"
-        val name2 = "Ultra man"
-        val expected = "Product with name '$name' already exists."
+        val name = "Superman"
+        val product = productRepository.findByName(name).get()
+        val name2 = "Man"
+        val expected = "Product with name '$name2' already exists."
+
+        val targetId = product.id
 
         RestAssured
             .given().log().all()
-            .body(Product(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/products")
-            .then().log().all()
-            .assertThat()
-            .statusCode(HttpStatus.CREATED.value())
-
-        val product =
-            RestAssured
-                .given().log().all()
-                .body(Product(name = name2, price = 1.5, imageUrl = "https://www.product.com/image/1"))
-                .contentType(ContentType.JSON)
-                .`when`().post("/api/products")
-                .then().log().all()
-                .assertThat()
-                .statusCode(HttpStatus.CREATED.value())
-                .extract()
-
-        val targetId = product.body().jsonPath().getLong("id")
-
-        RestAssured
-            .given().log().all()
-            .body(Product(id = targetId, name = name, price = 2.0, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = name2, price = 2.0, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().put("/api/products/$targetId")
             .then().log().all()
@@ -358,7 +336,7 @@ class ProductControllerTest(
 
     @Test
     fun delete() {
-        val product = create()
+        val product = productRepository.findAll().first()
         val response = controller.deleteProduct(product.id)
         assertThat(response.statusCode.value()).isEqualTo(HttpStatus.NO_CONTENT.value())
     }
@@ -377,7 +355,6 @@ class ProductControllerTest(
 
     @Test
     fun `delete() - unit test, should return 404 when the product to delete doesn't exist`() {
-        create()
         assertThrows<NotFoundException> { controller.deleteProduct(1000) }
     }
 }

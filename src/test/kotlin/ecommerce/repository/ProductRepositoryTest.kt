@@ -13,6 +13,7 @@ import org.springframework.data.repository.findByIdOrNull
 @DataJpaTest
 class ProductRepositoryTest(
     @Autowired private val products: ProductRepository,
+    @Autowired private val optionRepository: OptionRepository,
     @Autowired private val testEntityManager: TestEntityManager,
 ) {
     @AfterEach
@@ -22,7 +23,8 @@ class ProductRepositoryTest(
 
     @Test
     fun save() {
-        val expected = Product(name = "abc", price = 1.2, imageUrl = "https://sample.com/2")
+        val options = optionRepository.findAll().subList(0, 3)
+        val expected = Product(name = "abc", price = 1.2, imageUrl = "https://sample.com/2", options = options)
         val actual = products.save(expected)
         assertThat(actual.id).isNotZero()
         assertThat(actual.name).isEqualTo(expected.name)
@@ -30,37 +32,34 @@ class ProductRepositoryTest(
 
     @Test
     fun findById() {
-        val product = Product(name = "abcd", price = 1.2, imageUrl = "https://sample.com/2")
-        val returned = products.save(product)
-        val actual = products.findById(returned.id).get()
+        val product = products.findAll().first()
+        val actual = products.findById(product.id).get()
         assertThat(actual.id).isNotZero()
-        assertThat(actual.id).isEqualTo(returned.id)
+        assertThat(actual.id).isEqualTo(product.id)
         assertThat(actual.name).isEqualTo(product.name)
     }
 
     @Test
     fun findByName() {
-        val product = Product(name = "abcd", price = 1.2, imageUrl = "https://sample.com/2")
-        val returned = products.save(product)
-        val actual = products.findByName("abcd").get()
+        val product = products.findById(1L).get()
+        val actual = products.findByName("Iron Man").get()
         assertThat(actual.id).isNotZero()
-        assertThat(actual.id).isEqualTo(returned.id)
+        assertThat(actual.id).isEqualTo(product.id)
         assertThat(actual.name).isEqualTo(product.name)
     }
 
     @Test
     fun `findAll - has some data`() {
         save()
-        findById()
         val actual = products.findAll()
+        actual.size
         assertThat(actual).isNotEmpty()
-        assertThat(actual).hasSize(9)
+        assertThat(actual).hasSize(8)
     }
 
     @Test
     fun update() {
-        val newProduct = Product(name = "Iron body", price = 99.0, imageUrl = "https://alexnsan.comics/imageurl/123")
-        val product = products.save(newProduct)
+        val product = products.findAll().first()
 
         val expectedName = "abc"
         val expectedPrice = 1.2
@@ -80,8 +79,7 @@ class ProductRepositoryTest(
 
     @Test
     fun delete() {
-        val newProduct = Product(name = "Iron body", price = 99.0, imageUrl = "https://alexnsan.comics/imageurl/123")
-        val product = products.save(newProduct)
+        val product = products.findAll().first()
 
         products.delete(product)
 

@@ -1,10 +1,12 @@
 package ecommerce.model
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity
@@ -16,10 +18,17 @@ class Product(
     var price: Double,
     @Column(nullable = false)
     var imageUrl: String,
+    options: List<Option> = emptyList(),
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
 ) {
+    @OneToMany(mappedBy = "product", cascade = [CascadeType.PERSIST])
+    val options: MutableList<Option> = options.toMutableList()
+
     init {
+        require(options.isNotEmpty()) { "Options must not be empty" }
+        require(options.size == options.map { it.name }.distinct().size) { "Option names must be distinct" }
+        options.forEach { it.product = this }
     }
 
     fun changeName(name: String) {
@@ -34,12 +43,9 @@ class Product(
         this.imageUrl = imageUrl
     }
 
-    companion object {
-        fun toEntity(
-            product: Product,
-            id: Long,
-        ): Product {
-            return Product(product.name, product.price, product.imageUrl, id = id)
-        }
+    fun addOption(option: Option) {
+        require(options.size == options.map { it.name }.distinct().size)
+        this.options.add(option)
+        option.product = this
     }
 }

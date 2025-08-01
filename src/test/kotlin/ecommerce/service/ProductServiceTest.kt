@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -18,9 +17,6 @@ class ProductServiceTest(
     @Autowired private val productService: ProductService,
     @Autowired private val productRepository: ProductRepository,
 ) {
-    @LocalServerPort
-    private var port: Int = 0
-
     fun insert(productName: String = "product1"): Product {
         val productForm = ProductForm(name = productName, price = 1.5, imageUrl = "https://www.product.com/image/1")
         return productService.insert(productForm)
@@ -67,7 +63,7 @@ class ProductServiceTest(
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
         val response = productService.update(productForm, product.id)
         assertThat(response.name).isEqualTo(productForm.name)
-        assertThat(response.id).isEqualTo(ProductForm.toEntity(productForm, product.id).id)
+        assertThat(response.id).isEqualTo(product.id)
     }
 
     @Test
@@ -76,6 +72,6 @@ class ProductServiceTest(
         val productForm = ProductForm(name = "Stone Body", price = 1.5, imageUrl = "https://www.product.com/image/1")
         val response = productService.update(productForm, product.id)
         assertThat(response.name).isEqualTo(productForm.name)
-        assertThat(response.id).isEqualTo(ProductForm.toEntity(productForm, product.id).id)
+        assertThat(response.id).isEqualTo(product.id)
     }
 }

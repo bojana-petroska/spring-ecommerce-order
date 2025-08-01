@@ -7,7 +7,6 @@ import ecommerce.dto.CartUpdateQuantityForm
 import ecommerce.dto.LoginForm
 import ecommerce.exception.NotFoundException
 import ecommerce.model.Member
-import ecommerce.model.Product
 import ecommerce.repository.MemberRepository
 import ecommerce.repository.ProductRepository
 import ecommerce.service.CartItemService
@@ -152,8 +151,7 @@ class CartControllerTest(
 
     @Test
     fun `viewCart() - 1 item in cart`() {
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val member = Member(email = "testview2@test.com", password = "test1234")
         val savedMember = memberRepository.save(member)
         val form = CartAddItemForm(savedProduct.id, 1)
@@ -182,8 +180,7 @@ class CartControllerTest(
 
     @Test
     fun `updateQuantity() - return 200 OK when update success`() {
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val member = Member(email = "test@test.com", password = "test1234")
         val savedMember = memberRepository.save(member)
         cartItemService.addCartItem(savedMember.id, savedProduct.id)
@@ -207,8 +204,7 @@ class CartControllerTest(
 
     @Test
     fun `removeFromCart() - return 200 OK when remove success`() {
-        val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
-        val savedProduct = productRepository.save(product)
+        val savedProduct = productRepository.findAll().first()
         val member = Member(email = "test@test.com", password = "test1234")
         val savedMember = memberRepository.save(member)
         cartItemService.addCartItem(savedMember.id, savedProduct.id)
@@ -225,61 +221,58 @@ class CartControllerTest(
         val productId = PRODUCT_ID
         assertThrows<NotFoundException> { controller.removeFromCart(productId, LOGIN_MEMBER) }
     }
-//
-//    @Test
-//    fun `Interceptor - allow admin user to access admin endpoint`() {
-//        val member = Member(email = "test@test.com", password = "test1234", role = "admin")
-//        val savedMember = memberRepository.saveAndFlush(member)
-//
-//        val accessToken =
-//            RestAssured
-//                .given().log().all()
-//                .body(LoginForm(savedMember.email, savedMember.password))
-//                .contentType(MediaType.APPLICATION_JSON_VALUE)
-//                .accept(MediaType.APPLICATION_JSON_VALUE)
-//                .`when`().post("/api/members/login")
-//                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
-//
-//        RestAssured
-//            .given().log().all()
-//            .header("Authorization", "Bearer $accessToken")
-//            .contentType(ContentType.JSON)
-//            .`when`().get("/api/admin/cart-stats/top5-products")
-//            .then().log().all()
-//            .assertThat()
-//            .statusCode(HttpStatus.OK.value())
-//    }
-//
-//    @Test
-//    fun `Interceptor - block non-admin user to access admin endpoint`() {
-//        val member = Member(email = "test@test.com", password = "test1234")
-//        val savedMember = memberRepository.save(member)
-//
-//        val accessToken =
-//            RestAssured
-//                .given().log().all()
-//                .body(LoginForm(savedMember.email, savedMember.password))
-//                .contentType(MediaType.APPLICATION_JSON_VALUE)
-//                .accept(MediaType.APPLICATION_JSON_VALUE)
-//                .`when`().post("/api/members/login")
-//                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
-//
-//        RestAssured
-//            .given().log().all()
-//            .header("Authorization", "Bearer $accessToken")
-//            .contentType(ContentType.JSON)
-//            .`when`().get("/api/admin/cart-stats/top5-products")
-//            .then().log().all()
-//            .assertThat()
-//            .statusCode(HttpStatus.UNAUTHORIZED.value())
-//    }
+
+    @Test
+    fun `Interceptor - allow admin user to access admin endpoint`() {
+        val savedMember = memberRepository.findByEmail(LOGIN_EMAIL) ?: throw NotFoundException("Something went wrong")
+
+        val accessToken =
+            RestAssured
+                .given().log().all()
+                .body(LoginForm(savedMember.email, savedMember.password))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .`when`().post("/api/members/login")
+                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
+
+        RestAssured
+            .given().log().all()
+            .header("Authorization", "Bearer $accessToken")
+            .contentType(ContentType.JSON)
+            .`when`().get("/api/admin/cart-stats/top5-products")
+            .then().log().all()
+            .assertThat()
+            .statusCode(HttpStatus.OK.value())
+    }
+
+    @Test
+    fun `Interceptor - block non-admin user to access admin endpoint`() {
+        val savedMember = memberRepository.findByEmail(NON_ADMIN_EMAIL) ?: throw NotFoundException("Not found")
+
+        val accessToken =
+            RestAssured
+                .given().log().all()
+                .body(LoginForm(savedMember.email, savedMember.password))
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .`when`().post("/api/members/login")
+                .then().log().all().extract().`as`(AuthResponse::class.java).accessToken
+
+        RestAssured
+            .given().log().all()
+            .header("Authorization", "Bearer $accessToken")
+            .contentType(ContentType.JSON)
+            .`when`().get("/api/admin/cart-stats/top5-products")
+            .then().log().all()
+            .assertThat()
+            .statusCode(HttpStatus.UNAUTHORIZED.value())
+    }
 
     companion object {
         private const val PRODUCT_ID = 1L
         private const val LOGIN_EMAIL = "san@htc.com"
         private const val LOGIN_PASSWORD = "san1234"
         private const val NON_ADMIN_EMAIL = "min@htc.com"
-        private const val NON_ADMIN_PASSWORD = "min1234"
         private val LOGIN_MEMBER = Member(email = LOGIN_EMAIL, password = LOGIN_PASSWORD)
     }
 }

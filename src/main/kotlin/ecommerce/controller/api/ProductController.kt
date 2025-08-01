@@ -1,6 +1,8 @@
 package ecommerce.controller.api
 
+import ecommerce.dto.OptionResponse
 import ecommerce.dto.ProductForm
+import ecommerce.dto.ProductResponse
 import ecommerce.exception.ProductNameAlreadyExistsException
 import ecommerce.model.Product
 import ecommerce.service.ProductService
@@ -25,10 +27,11 @@ class ProductController(private val productService: ProductService) {
     @PostMapping
     fun createProduct(
         @RequestBody @Valid productForm: ProductForm,
-    ): ResponseEntity<Product> {
+    ): ResponseEntity<ProductResponse> {
         val product = productService.insert(productForm)
         val uri = URI.create("/api/products/${product.id}")
-        return ResponseEntity.created(uri).body(product)
+        val productResponse = ProductResponse(product.id, product.name, product.price, product.imageUrl)
+        return ResponseEntity.created(uri).body(productResponse)
     }
 
     @GetMapping
@@ -36,13 +39,14 @@ class ProductController(private val productService: ProductService) {
         @RequestParam(defaultValue = "0") pageNumber: Int,
         @RequestParam(defaultValue = "10") pageSize: Int,
         @RequestParam(defaultValue = "name") sortBy: String,
-    ): ResponseEntity<Page<Product>> {
-        val productPage: Page<Product> =
+    ): ResponseEntity<Page<ProductResponse>> {
+        val productPage =
             when (sortBy.isEmpty()) {
                 true -> productService.getPaginatedProducts(pageNumber, pageSize)
                 false -> productService.getPaginatedProducts(pageNumber, pageSize, sortBy)
             }
-        return ResponseEntity.ok(productPage)
+        val productResponsePage = productPage.map { ProductResponse(it.id, it.name, it.price, it.imageUrl) }
+        return ResponseEntity.ok(productResponsePage)
     }
 
     @GetMapping("{id}")
@@ -51,6 +55,17 @@ class ProductController(private val productService: ProductService) {
     ): ResponseEntity<Product> {
         val product = productService.findById(id)
         return ResponseEntity.ok(product)
+    }
+
+    @GetMapping("{id}/options")
+    fun getProductOptions(
+        @PathVariable id: Long,
+    ): ResponseEntity<List<OptionResponse>> {
+        val product = productService.findById(id)
+        val options =
+            product.options
+                .map { OptionResponse(it.id, it.name, it.quantity) }
+        return ResponseEntity.ok(options)
     }
 
     @PutMapping("{id}")

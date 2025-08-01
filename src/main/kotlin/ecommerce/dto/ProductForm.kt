@@ -1,5 +1,6 @@
 package ecommerce.dto
 
+import ecommerce.model.Option
 import ecommerce.model.Product
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
@@ -18,16 +19,11 @@ data class ProductForm(
     var imageUrl: String = String(),
 ) {
     companion object {
-        fun toProduct(productForm: ProductForm): Product {
-            return Product(name = productForm.name, price = productForm.price, imageUrl = productForm.imageUrl)
-        }
-
-        fun toEntity(
+        fun toProduct(
             productForm: ProductForm,
-            id: Long,
+            options: List<Option>,
         ): Product {
-            val product = toProduct(productForm)
-            return Product.toEntity(product, id)
+            return Product(name = productForm.name, price = productForm.price, imageUrl = productForm.imageUrl, options = options)
         }
     }
 }
