@@ -1,12 +1,14 @@
 package ecommerce.controller.api
 
 import ecommerce.dto.CartAddItemForm
+import ecommerce.dto.CartItemResponse
 import ecommerce.dto.CartUpdateQuantityForm
 import ecommerce.model.CartItem
 import ecommerce.model.Member
 import ecommerce.service.CartItemService
 import ecommerce.ui.LoginMember
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -25,10 +28,18 @@ class CartController(
     @GetMapping
     fun viewCart(
         @LoginMember member: Member,
-    ): ResponseEntity<List<CartItem>> {
+        @RequestParam(defaultValue = "0") pageNumber: Int,
+        @RequestParam(defaultValue = "10") pageSize: Int,
+        @RequestParam(defaultValue = "name") sortBy: String,
+    ): ResponseEntity<Page<CartItemResponse>> {
         val memberId = member.id
-        val cartItems = cartItemService.getCartItemsByMemberId(memberId)
-        return ResponseEntity.ok(cartItems)
+        val cartItemPage =
+            when (sortBy.isEmpty()) {
+                true -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize)
+                false -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy)
+            }
+        val alteredPages = cartItemPage.map { CartItem.to(it) }
+        return ResponseEntity.ok(alteredPages)
     }
 
     @PostMapping

@@ -11,7 +11,11 @@
    - [x] find way to deal with one-to-one &one-to-many & many-to-one & many-to-many
 
 2. Refactor Repository
-   - refactor test, using `@DataJpaTest` 
+   - [x] `CartItemRepository` using `JpaRepository`
+   - [x] `ProductRepository` using `JpaRepository`
+   - [x] `MemberRepository` using `JpaRepository`
+   - [x] `CartRepository` using `JpaRepository`
+   - [x] refactor tests, using `@DataJpaTest` 
 3. Refactor Service
    - ex. validation wit `require()`
 

@@ -33,8 +33,25 @@ class CartItemServiceTest(
         val product = Product(name = "abc", price = 1.2, imageUrl = "https://abc.com")
         val savedProduct = productRepository.save(product)
         cartItemService.addCartItem(registeredMember.id, savedProduct.id, 1)
-        val cartItems = cartItemService.getCartItemsByMemberId(registeredMember.id)
+
+        val pageNumber = 0
+        val pageSize = 5
+        val sortBy = "name"
+        val cartItems = cartItemService.getCartItemsByMemberId(registeredMember.id, pageNumber, pageSize, sortBy)
+        cartItems.size
         assertThat(cartItems).hasSize(1)
+    }
+
+    @Test
+    fun `getCartItemsByMemberId() - test`() {
+        val member = memberRepository.findAll().first()
+
+        val pageNumber = 0
+        val pageSize = 5
+        val sortBy = "name"
+        val cartItems = cartItemService.getCartItemsByMemberId(member.id, pageNumber, pageSize, sortBy)
+        cartItems.size
+        assertThat(cartItems).hasSize(pageSize)
     }
 
     @Test

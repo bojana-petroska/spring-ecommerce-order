@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service
 @Service
 class ProductService(private val productRepository: ProductRepository) {
     fun insert(form: ProductForm): Product {
-        checkProductNameExists(form.name)
+        nameExists(form.name)
         val product = ProductForm.toProduct(form)
         val savedProduct = productRepository.save(product)
         return productRepository.findByIdOrNull(savedProduct.id)
@@ -30,7 +30,7 @@ class ProductService(private val productRepository: ProductRepository) {
         return productRepository.findAll(PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
     }
 
-    fun findAll(): List<Product> = productRepository.findAll()
+    // fun findAll(): List<Product> = productRepository.findAll()
 
     fun findById(id: Long): Product = productRepository.findByIdOrNull(id) ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
 
@@ -42,7 +42,7 @@ class ProductService(private val productRepository: ProductRepository) {
             productRepository.findByIdOrNull(id)
                 ?: throw InternalServerErrorException("ProductService.update() - Product with ID $id not found")
         val originalName = originalProduct.name
-        checkProductNameExists(form.name, originalName)
+        nameExists(form.name, originalName)
         val product = ProductForm.toEntity(form, id)
         product.changeName(form.name)
         product.changePrice(form.price)
@@ -57,16 +57,29 @@ class ProductService(private val productRepository: ProductRepository) {
         productRepository.delete(product)
     }
 
-    private fun checkProductNameExists(
+//    private fun checkProductNameExists(
+//        name: String,
+//        originalName: String? = null,
+//    ) {
+//        if (originalName != null && name == originalName) {
+//            return
+//        } else if (productRepository.findByName(name).isPresent) {
+//            val message = "Product with name '$name' already exists."
+//            throw ProductNameAlreadyExistsException(message)
+//        }
+//    }
+
+    fun nameExists(
         name: String,
         originalName: String? = null,
-    ) {
+    ): Boolean {
         if (originalName != null && name == originalName) {
-            return
+            return true
         } else if (productRepository.findByName(name).isPresent) {
             val message = "Product with name '$name' already exists."
             throw ProductNameAlreadyExistsException(message)
         }
+        return false
     }
 
     companion object {

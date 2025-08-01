@@ -5,6 +5,8 @@ import ecommerce.model.CartItem
 import ecommerce.repository.CartItemRepository
 import ecommerce.repository.MemberRepository
 import ecommerce.repository.ProductRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
@@ -14,11 +16,18 @@ class CartItemService(
     private val cartItemRepository: CartItemRepository,
     private val productRepository: ProductRepository,
 ) {
-    fun getCartItemsByMemberId(memberId: Long): List<CartItem> {
+    fun getCartItemsByMemberId(
+        memberId: Long,
+        pageNumber: Int,
+        pageSize: Int,
+        sortBy: String = "name",
+    ): Page<CartItem> {
         val member =
             memberRepository.findByIdOrNull(memberId)
                 ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
-        return cartItemRepository.findAllByMember(member)
+//        val sort = Sort.by("product_$sortBy").ascending()
+        val pages = cartItemRepository.findAllByMemberOrderByProductNameAsc(member, PageRequest.of(pageNumber, pageSize))
+        return pages
     }
 
     fun addCartItem(
@@ -85,7 +94,6 @@ class CartItemService(
     companion object {
         const val MESSAGE_PRODUCT_NOT_FOUND = "Product not found"
         const val MESSAGE_PRODUCT_NOT_FOUND_IN_CART = "Product not found in Cart"
-        const val MESSAGE_UNEXPECTED_ACTION_IN_CART = "Unexpected action in Cart"
         const val MESSAGE_REMOVE_SUCCESS = "Item removed from cart"
         const val MESSAGE_UPDATE_SUCCESS = "Item updated in cart"
     }

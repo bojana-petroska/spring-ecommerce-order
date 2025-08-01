@@ -1,5 +1,6 @@
 package ecommerce.model
 
+import ecommerce.dto.CartItemResponse
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
@@ -29,5 +30,11 @@ class CartItem(
 ) {
     fun changeQuantity(quantity: Int) {
         this.quantity += quantity
+    }
+
+    companion object {
+        fun to(cartItem: CartItem): CartItemResponse {
+            return CartItemResponse(cartItem.product, cartItem.quantity, cartItem.createdAt)
+        }
     }
 }

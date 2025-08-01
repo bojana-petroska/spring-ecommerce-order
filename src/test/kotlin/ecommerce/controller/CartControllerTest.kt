@@ -142,9 +142,12 @@ class CartControllerTest(
         val member = Member(email = "testview@test.com", password = "test1234")
         val savedMember = memberRepository.save(member)
         val expected = 0
-        val response = controller.viewCart(savedMember)
+        val pageNumber = 0
+        val pageSize = 5
+        val sortBy = "price"
+        val response = controller.viewCart(savedMember, pageNumber, pageSize, sortBy)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        assertThat(response.body?.size).isEqualTo(expected)
+        assertThat(response.body?.content?.size).isEqualTo(expected)
     }
 
     @Test
@@ -156,7 +159,23 @@ class CartControllerTest(
         val form = CartAddItemForm(savedProduct.id, 1)
         controller.addToCart(form, savedMember)
         val expected = 1
-        val response = controller.viewCart(savedMember)
+        val pageNumber = 0
+        val pageSize = 10
+        val sortBy = "price"
+        val response = controller.viewCart(savedMember, pageNumber, pageSize, sortBy)
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body?.content?.size).isEqualTo(expected)
+    }
+
+    @Test
+    fun `viewCart() - view all cart items in a cart`() {
+        val member = memberRepository.findAll().first()
+
+        val expected = 5
+        val pageNumber = 0
+        val pageSize = 5
+        val sortBy = "price"
+        val response = controller.viewCart(member, pageNumber, pageSize, sortBy)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(response.body?.size).isEqualTo(expected)
     }
