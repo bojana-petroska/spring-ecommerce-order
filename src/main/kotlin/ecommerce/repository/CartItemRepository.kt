@@ -21,9 +21,9 @@ interface CartItemRepository : JpaRepository<CartItem, Long>, PagingAndSortingRe
         member: Member,
         pageable: Pageable,
     ): Page<CartItem>
-
-    fun findAllByMemberOrderByProductNameAsc(
-        member: Member,
-        pageable: Pageable,
-    ): Page<CartItem>
 }
+//    fun findAllByMemberOrderByProductNameAsc(
+//        member: Member,
+//        pageable: Pageable,
+//    ): Page<CartItem>
+//}

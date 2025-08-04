@@ -159,7 +159,7 @@ class CartControllerTest(
         val expected = 1
         val pageNumber = 0
         val pageSize = 10
-        val sortBy = "price"
+        val sortBy = "name"
         val response = controller.viewCart(savedMember, pageNumber, pageSize, sortBy)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(response.body?.content?.size).isEqualTo(expected)

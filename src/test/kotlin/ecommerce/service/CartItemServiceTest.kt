@@ -30,7 +30,7 @@ class CartItemServiceTest(
 
         val pageNumber = 0
         val pageSize = 5
-        val sortBy = "name"
+        val sortBy = "product.name"
         val cartItems = cartItemService.getCartItemsByMemberId(registeredMember.id, pageNumber, pageSize, sortBy)
         cartItems.size
         assertThat(cartItems).hasSize(1)
@@ -42,7 +42,7 @@ class CartItemServiceTest(
 
         val pageNumber = 0
         val pageSize = 5
-        val sortBy = "name"
+        val sortBy = "product.name"
         val cartItems = cartItemService.getCartItemsByMemberId(member.id, pageNumber, pageSize, sortBy)
         cartItems.size
         assertThat(cartItems).hasSize(pageSize)

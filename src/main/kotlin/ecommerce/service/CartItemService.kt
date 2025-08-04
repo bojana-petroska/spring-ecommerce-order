@@ -7,6 +7,7 @@ import ecommerce.repository.MemberRepository
 import ecommerce.repository.ProductRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
@@ -20,12 +21,12 @@ class CartItemService(
         memberId: Long,
         pageNumber: Int,
         pageSize: Int,
-        sortBy: String = "name",
+        sortBy: String = "product.name",
     ): Page<CartItem> {
         val member =
             memberRepository.findByIdOrNull(memberId)
                 ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
-        val pages = cartItemRepository.findAllByMemberOrderByProductNameAsc(member, PageRequest.of(pageNumber, pageSize))
+        val pages = cartItemRepository.findAllByMember(member, PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
         return pages
     }
 

@@ -35,8 +35,8 @@ class CartController(
         val memberId = member.id
         val cartItemPage =
             when (sortBy.isEmpty()) {
-                true -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize)
-                false -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy)
+                true -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy = "product.name")
+                false -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy = "product.name")
             }
         val alteredPages = cartItemPage.map { CartItem.to(it) }
         return ResponseEntity.ok(alteredPages)
@@ -48,7 +48,7 @@ class CartController(
         @LoginMember member: Member,
     ): ResponseEntity<String> {
         val memberId = member.id
-        val cartItem = cartItemService.addCartItem(memberId, cartForm.productId, cartForm.quantity)
+        cartItemService.addCartItem(memberId, cartForm.productId, cartForm.quantity)
         return ResponseEntity.ok(MESSAGE_ADD_SUCCESS)
     }
 
