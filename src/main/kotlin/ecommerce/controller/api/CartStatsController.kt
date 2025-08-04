@@ -19,7 +19,6 @@ class CartStatsController(
     fun getTop5Products(
         @LoginMember member: Member,
     ): ResponseEntity<List<TopProductStats>> {
-        member.id
         val stats = cartStatisticsService.getTop5AddedProductsInLast30Days()
         return ResponseEntity.ok(stats)
     }
@@ -28,7 +27,6 @@ class CartStatsController(
     fun getActiveMembers(
         @LoginMember member: Member,
     ): ResponseEntity<List<ActiveMemberInfo>> {
-        member.id
         val members = cartStatisticsService.getActiveMembersInLast7Days()
         return ResponseEntity.ok(members)
     }

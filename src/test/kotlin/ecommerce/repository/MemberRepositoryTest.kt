@@ -32,7 +32,7 @@ class MemberRepositoryTest(
     fun findByEmail() {
         val expected = "findByEmail@htc.com"
         val member = Member(email = expected, password = "test1234")
-        val savedMember = memberRepository.save(member)
+        memberRepository.save(member)
         val target = memberRepository.findByEmail(expected)
         assertThat(target?.email).isEqualTo(expected)
     }

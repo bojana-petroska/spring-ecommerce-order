@@ -143,7 +143,7 @@ class CartControllerTest(
         val expected = 0
         val pageNumber = 0
         val pageSize = 5
-        val sortBy = "price"
+        val sortBy = "product.price"
         val response = controller.viewCart(savedMember, pageNumber, pageSize, sortBy)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(response.body?.content?.size).isEqualTo(expected)
@@ -159,7 +159,7 @@ class CartControllerTest(
         val expected = 1
         val pageNumber = 0
         val pageSize = 10
-        val sortBy = "name"
+        val sortBy = "product.name"
         val response = controller.viewCart(savedMember, pageNumber, pageSize, sortBy)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(response.body?.content?.size).isEqualTo(expected)
@@ -172,7 +172,7 @@ class CartControllerTest(
         val expected = 5
         val pageNumber = 0
         val pageSize = 5
-        val sortBy = "price"
+        val sortBy = "product.price"
         val response = controller.viewCart(member, pageNumber, pageSize, sortBy)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
         assertThat(response.body?.size).isEqualTo(expected)

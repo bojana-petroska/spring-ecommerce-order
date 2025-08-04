@@ -3,7 +3,6 @@ package ecommerce.controller.api
 import ecommerce.dto.CartAddItemForm
 import ecommerce.dto.CartItemResponse
 import ecommerce.dto.CartUpdateQuantityForm
-import ecommerce.model.CartItem
 import ecommerce.model.Member
 import ecommerce.service.CartItemService
 import ecommerce.ui.LoginMember
@@ -33,12 +32,11 @@ class CartController(
         @RequestParam(defaultValue = "name") sortBy: String,
     ): ResponseEntity<Page<CartItemResponse>> {
         val memberId = member.id
-        val cartItemPage =
-            when (sortBy.isEmpty()) {
-                true -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy = "product.name")
-                false -> cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy = "product.name")
+        val pages = cartItemService.getCartItemsByMemberId(memberId, pageNumber, pageSize, sortBy)
+        val alteredPages =
+            pages.map { cartItem ->
+                CartItemResponse(cartItem.product, cartItem.quantity, cartItem.createdAt)
             }
-        val alteredPages = cartItemPage.map { CartItem.to(it) }
         return ResponseEntity.ok(alteredPages)
     }
 

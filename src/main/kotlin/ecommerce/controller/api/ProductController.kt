@@ -40,11 +40,7 @@ class ProductController(private val productService: ProductService) {
         @RequestParam(defaultValue = "10") pageSize: Int,
         @RequestParam(defaultValue = "name") sortBy: String,
     ): ResponseEntity<Page<ProductResponse>> {
-        val productPage =
-            when (sortBy.isEmpty()) {
-                true -> productService.getPaginatedProducts(pageNumber, pageSize)
-                false -> productService.getPaginatedProducts(pageNumber, pageSize, sortBy)
-            }
+        val productPage = productService.getPaginatedProducts(pageNumber, pageSize, sortBy)
         val productResponsePage = productPage.map { ProductResponse(it.id, it.name, it.price, it.imageUrl) }
         return ResponseEntity.ok(productResponsePage)
     }

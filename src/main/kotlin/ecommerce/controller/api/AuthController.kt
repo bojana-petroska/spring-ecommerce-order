@@ -7,7 +7,6 @@ import ecommerce.dto.LoginForm
 import ecommerce.dto.MemberResponse
 import ecommerce.dto.RegisterForm
 import ecommerce.exception.MemberEmailAlreadyExistsException
-import ecommerce.model.Member
 import ecommerce.service.AuthService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
@@ -48,7 +47,7 @@ class AuthController(
     fun findMyInformation(request: HttpServletRequest): ResponseEntity<MemberResponse> {
         val token = authorizationExtractor.extract(request)
         val member = authService.findMemberByToken(token)
-        val response = Member.toResponse(member)
+        val response = MemberResponse(member.id, member.email)
         return ResponseEntity.ok().body(response)
     }
 

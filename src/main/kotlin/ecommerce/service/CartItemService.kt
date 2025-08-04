@@ -26,8 +26,16 @@ class CartItemService(
         val member =
             memberRepository.findByIdOrNull(memberId)
                 ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)
-        val pages = cartItemRepository.findAllByMember(member, PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
-        return pages
+        val cartItemPage =
+            when (sortBy.isEmpty()) {
+                true -> cartItemRepository.findAllByMember(member, PageRequest.of(pageNumber, pageSize))
+                false ->
+                    cartItemRepository.findAllByMember(
+                        member,
+                        PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)),
+                    )
+            }
+        return cartItemPage
     }
 
     fun addCartItem(
@@ -67,6 +75,7 @@ class CartItemService(
                 cartItem.get().quantity = quantity
                 return MESSAGE_UPDATE_SUCCESS
             }
+
             false -> throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND_IN_CART)
         }
     }
@@ -87,6 +96,7 @@ class CartItemService(
                 cartItemRepository.delete(cartItem.get())
                 return MESSAGE_REMOVE_SUCCESS
             }
+
             false -> throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND_IN_CART)
         }
     }

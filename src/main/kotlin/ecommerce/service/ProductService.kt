@@ -35,7 +35,12 @@ class ProductService(
         pageSize: Int,
         sortBy: String = "name",
     ): Page<Product> {
-        return productRepository.findAll(PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
+        val productPage =
+            when (sortBy.isEmpty()) {
+                true -> productRepository.findAll(PageRequest.of(pageNumber, pageSize))
+                false -> productRepository.findAll(PageRequest.of(pageNumber, pageSize, Sort.by(sortBy)))
+            }
+        return productPage
     }
 
     fun findById(id: Long): Product = productRepository.findByIdOrNull(id) ?: throw NotFoundException(MESSAGE_PRODUCT_NOT_FOUND)

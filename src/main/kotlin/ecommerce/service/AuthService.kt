@@ -22,7 +22,8 @@ class AuthService(
 ) {
     fun registerMember(form: RegisterForm): Member {
         checkMemberEmailExists(form.email)
-        val member = Member.from(form)
+        val registeredMember = RegisterForm(form.email, form.password)
+        val member = Member(registeredMember.email, form.password)
         val savedMember = memberRepository.save(member)
         savedMember.cart = cartRepository.save(Cart())
         return memberRepository.findByIdOrNull(savedMember.id)
