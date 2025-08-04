@@ -1,5 +1,7 @@
 package ecommerce
 
+import ecommerce.dto.errors.ErrorMessage
+import ecommerce.dto.errors.ErrorResponse
 import ecommerce.exception.AuthorizationException
 import ecommerce.exception.InternalServerErrorException
 import ecommerce.exception.NotFoundException
@@ -13,53 +15,59 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 @ControllerAdvice
 class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException::class)
-    fun handleNotFoundException(e: NotFoundException): ResponseEntity<Void> {
+    fun handleNotFoundException(e: NotFoundException): ResponseEntity<ErrorResponse> {
         println("NotFoundException occurred: " + e.message)
-        return ResponseEntity.notFound().build()
+        val error = ErrorMessage("resource", e.message ?: "Resource was not found.")
+        val errorResponse = ErrorResponse(listOf(error))
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse)
     }
 
     @ExceptionHandler(InternalServerErrorException::class)
-    fun handleInternalServerErrorException(e: InternalServerErrorException): ResponseEntity<Void> {
+    fun handleInternalServerErrorException(e: InternalServerErrorException): ResponseEntity<ErrorResponse> {
         println("InternalServerErrorException occurred: " + e.message)
-        return ResponseEntity.internalServerError().build()
+        val error = ErrorMessage("server", e.message ?: "Internal Server Error.")
+        val errorResponse = ErrorResponse(listOf(error))
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
 
     @ExceptionHandler(DataAccessException::class)
-    fun handleDataAccessException(e: Exception): ResponseEntity<Void> {
+    fun handleDataAccessException(e: Exception): ResponseEntity<ErrorResponse> {
         println("DataAccessException occurred: " + e.message)
-        return ResponseEntity.internalServerError().build()
+        val error = ErrorMessage("database", e.message ?: "DataAccess Error.")
+        val errorResponse = ErrorResponse(listOf(error))
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
 
     @ExceptionHandler(IllegalStateException::class)
-    fun handlerIllegalStateException(e: Exception): ResponseEntity<Void> {
+    fun handlerIllegalStateException(e: Exception): ResponseEntity<ErrorResponse> {
+        val error = ErrorMessage("state", e.message ?: "State not found.")
+        val errorResponse = ErrorResponse(listOf(error))
         println("IllegalStateException occurred: " + e.message)
-        return ResponseEntity.internalServerError().build()
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse)
     }
 
     @ExceptionHandler(IllegalArgumentException::class)
-    fun handlerIllegalArgumentException(e: Exception): ResponseEntity<Map<String, Any>> {
+    fun handlerIllegalArgumentException(e: Exception): ResponseEntity<ErrorResponse> {
         println("IllegalArgumentException occurred: " + e.message)
-        val error = mapOf("page" to e.message)
-        val errorBody = mapOf("errors" to error)
-        return ResponseEntity.badRequest().body(errorBody)
+        val error = ErrorMessage("parameter", e.message ?: "An illegal argument was provided.")
+        val errorResponse = ErrorResponse(listOf(error))
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<Map<String, Any>> {
+    fun handleValidationException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
+        println("MethodArgumentNotValidException occurred:" + e.message)
         val errors =
-            e.bindingResult.fieldErrors.associate { error ->
-                error.field to (error.defaultMessage ?: "Invalid value")
-            }
-        val errorBody = mapOf("errors" to errors)
-        println("MethodArgumentNotValidException occurred: $errorBody")
-        return ResponseEntity.badRequest().body(errorBody)
+            e.bindingResult.fieldErrors.map { ErrorMessage(it.field, it.defaultMessage) }
+        val errorResponse = ErrorResponse(errors)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
 
     @ExceptionHandler(AuthorizationException::class)
-    fun handleAuthorizationException(e: AuthorizationException): ResponseEntity<Map<String, Any>> {
-        val error = mapOf("authorization" to e.message)
-        val errorBody = mapOf("errors" to error)
-        println("AuthorizationException occurred: $errorBody")
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+    fun handleAuthorizationException(e: AuthorizationException): ResponseEntity<ErrorResponse> {
+        println("AuthorizationException occurred:" + e.message)
+        val error = ErrorMessage("authorization", e.message ?: "Authorization Error.")
+        val errorResponse = ErrorResponse(listOf(error))
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse)
     }
 }

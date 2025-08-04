@@ -76,7 +76,7 @@ class AuthControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.email", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -90,7 +90,7 @@ class AuthControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.email", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -104,7 +104,7 @@ class AuthControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.password", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -166,7 +166,7 @@ class AuthControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.email", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -180,7 +180,8 @@ class AuthControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.password", equalTo(expected))
+            .body("errors[0].field", equalTo("password"))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test

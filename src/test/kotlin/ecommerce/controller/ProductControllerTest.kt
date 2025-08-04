@@ -60,58 +60,71 @@ class ProductControllerTest(
                 "Product name is required",
                 "Must be no more than 15 characters, including spaces",
             )
-        val resBody = response.jsonPath().getMap<String, String>("errors")
-        val actual = resBody["name"]
+
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
+
         assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
-        assertThat(actual).isIn(targets)
+        assertThat(actualErrorMessage).isIn(targets)
     }
 
     @Test
     fun `create() - should return 400 when name is more than 15 characters`() {
         val expected = "Must be no more than 15 characters, including spaces"
-        RestAssured
-            .given().log().all()
-            .body(
-                ProductForm(
-                    name = "this is very long name",
-                    price = 1.5,
-                    imageUrl = "https://www.product.com/image/1",
-                ),
-            )
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/products")
-            .then().log().all()
-            .assertThat()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.name", equalTo(expected))
+        val response =
+            RestAssured
+                .given().log().all()
+                .body(
+                    ProductForm(
+                        name = "this is very long name",
+                        price = 1.5,
+                        imageUrl = "https://www.product.com/image/1",
+                    ),
+                )
+                .contentType(ContentType.JSON)
+                .`when`().post("/api/products")
+                .then().log().all()
+                .extract()
+
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
+        assertThat(actualErrorMessage).isIn(expected)
     }
 
     @Test
     fun `create() - should return 400 when name has unallowed character`() {
         val expected = "Contains unallowed character"
-        RestAssured
-            .given().log().all()
-            .body(ProductForm(name = "I am product!", price = 1.5, imageUrl = "https://www.product.com/image/1"))
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/products")
-            .then().log().all()
-            .assertThat()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.name", equalTo(expected))
+        val response =
+            RestAssured
+                .given().log().all()
+                .body(ProductForm(name = "I am product!", price = 1.5, imageUrl = "https://www.product.com/image/1"))
+                .contentType(ContentType.JSON)
+                .`when`().post("/api/products")
+                .then().log().all()
+                .extract()
+
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
+        assertThat(actualErrorMessage).isIn(expected)
     }
 
     @Test
     fun `create() - should return 400 when price is 0`() {
         val expected = "Product price must be greater than zero"
-        RestAssured
-            .given().log().all()
-            .body(ProductForm(name = "base", price = 0.0, imageUrl = "https://www.product.com/image/1"))
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/products")
-            .then().log().all()
-            .assertThat()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.price", equalTo(expected))
+        val response =
+            RestAssured
+                .given().log().all()
+                .body(ProductForm(name = "base", price = 0.0, imageUrl = "https://www.product.com/image/1"))
+                .contentType(ContentType.JSON)
+                .`when`().post("/api/products")
+                .then().log().all()
+                .extract()
+
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
+        assertThat(actualErrorMessage).isIn(expected)
     }
 
     @Test
@@ -129,24 +142,28 @@ class ProductControllerTest(
                 "Product image URL is required",
                 "Must start with 'https://'.",
             )
-        val resBody = response.jsonPath().getMap<String, String>("errors")
-        val actual = resBody["imageUrl"]
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
+
         assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
-        assertThat(actual).isIn(expected)
+        assertThat(actualErrorMessage).isIn(expected)
     }
 
     @Test
     fun `create() - should return 400 when image URL is not valid`() {
         val expected = "Must start with 'https://'."
-        RestAssured
-            .given().log().all()
-            .body(ProductForm(name = "base", price = 2.0, imageUrl = "ssh://www.product.com/image/1"))
-            .contentType(ContentType.JSON)
-            .`when`().post("/api/products")
-            .then().log().all()
-            .assertThat()
-            .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.imageUrl", equalTo(expected))
+        val response =
+            RestAssured
+                .given().log().all()
+                .body(ProductForm(name = "base", price = 2.0, imageUrl = "ssh://www.product.com/image/1"))
+                .contentType(ContentType.JSON)
+                .`when`().post("/api/products")
+                .then().log().all()
+                .extract()
+
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
+        assertThat(actualErrorMessage).isIn(expected)
     }
 
     @Test
@@ -262,24 +279,24 @@ class ProductControllerTest(
         val product = productRepository.findAll().first()
         val targetId = product.id
         val name = ""
+        val targets =
+            listOf(
+                "Product name is required",
+                "Contains unallowed character",
+                "Must be no more than 15 characters, including spaces",
+            )
         val response =
             RestAssured
                 .given().log().all()
                 .body(ProductForm(name = name, price = 1.5, imageUrl = "https://www.product.com/image/1"))
                 .contentType(ContentType.JSON)
                 .`when`().put("/api/products/$targetId")
-                .then().log().all().extract()
+                .then().log().all()
+                .extract()
 
-        val targets =
-            listOf(
-                "Contains unallowed character",
-                "Product name is required",
-                "Must be no more than 15 characters, including spaces",
-            )
-        val resBody = response.jsonPath().getMap<String, String>("errors")
-        val actual = resBody["name"]
+        val actualErrorMessage = response.jsonPath().getString("errors[0].message")
         assertThat(response.statusCode()).isEqualTo(HttpStatus.BAD_REQUEST.value())
-        assertThat(actual).isIn(targets)
+        assertThat(actualErrorMessage).isIn(targets)
     }
 
     @Test
@@ -295,7 +312,7 @@ class ProductControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.price", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -311,7 +328,7 @@ class ProductControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.imageUrl", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test

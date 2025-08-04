@@ -117,7 +117,7 @@ class CartControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.productId", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -133,7 +133,7 @@ class CartControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.quantity", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
