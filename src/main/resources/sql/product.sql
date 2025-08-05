@@ -1,3 +1,4 @@
+TRUNCATE TABLE options;
 TRUNCATE TABLE products;
 ;
 INSERT INTO products (name, price, image_url) VALUES ('Iron Man', 1000, 'https://alexnsan.comics/imageurl/1');
@@ -8,3 +9,12 @@ INSERT INTO products (name, price, image_url) VALUES ('Full Metal Alchemist', 10
 INSERT INTO products (name, price, image_url) VALUES ('Batman', 1000, 'https://alexnsan.comics/imageurl/6');
 INSERT INTO products (name, price, image_url) VALUES ('Man', 1000, 'https://alexnsan.comics/imageurl/7');
 ;
+
+INSERT INTO options (name, quantity, product_id) VALUES ('size_large', 10, 1);
+INSERT INTO options (name, quantity, product_id) VALUES ('size_small', 5, 1);
+INSERT INTO options (name, quantity, product_id) VALUES ('color_red', 20, 2);
+INSERT INTO options (name, quantity, product_id) VALUES ('color_blue', 20, 3);
+INSERT INTO options (name, quantity, product_id) VALUES ('variant_a', 15, 4);
+INSERT INTO options (name, quantity, product_id) VALUES ('variant_b', 15, 5);
+INSERT INTO options (name, quantity, product_id) VALUES ('version_1', 30, 6);
+INSERT INTO options (name, quantity, product_id) VALUES ('version_2', 30, 7);

@@ -65,24 +65,4 @@ class ProductTest {
         val product = Product("lotion", 20.0, "https://lotion.jpeg", options)
         assertThat(product.options[0].product).isEqualTo(product)
     }
-
-    @Test
-    fun `should add new option to product`() {
-        val product =
-            Product("lotion", 20.0, "https://lotion.jpeg", options = listOf(Option(name = "size", quantity = 10)))
-        val newOption = Option(name = "color", quantity = 5)
-        product.addOption(newOption)
-        assertThat(product.options).hasSize(2)
-        assertThat(newOption.product).isEqualTo(product)
-    }
-
-    @Test
-    fun `should throw error when adding duplicate option name`() {
-        val product =
-            Product("lotion", 20.0, "https://lotion.jpeg", options = listOf(Option(name = "size", quantity = 10)))
-        val newOption = Option(name = "size", quantity = 5)
-        assertThrows<IllegalArgumentException> {
-            product.addOption(newOption)
-        }
-    }
 }

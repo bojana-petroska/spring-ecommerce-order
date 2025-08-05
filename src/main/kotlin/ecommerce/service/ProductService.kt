@@ -24,7 +24,6 @@ class ProductService(
         val option = Option(name = "none", quantity = 1)
         val product = ProductForm.toProduct(form, listOf(option))
         val savedProduct = productRepository.save(product)
-        optionRepository.save(option)
         return productRepository.findByIdOrNull(savedProduct.id)
             ?: throw InternalServerErrorException("ProductService.insert() - Product with ID ${savedProduct.id} not found")
     }

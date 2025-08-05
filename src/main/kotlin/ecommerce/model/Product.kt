@@ -43,9 +43,9 @@ class Product(
         this.imageUrl = imageUrl
     }
 
-    fun addOption(option: Option) {
-        this.options.add(option)
-        require(options.size == options.map { it.name }.distinct().size)
-        option.product = this
-    }
+//    fun addOption(option: Option) {
+//        this.options.add(option)
+//        require(options.size == options.map { it.name }.distinct().size)
+//        option.product = this
+//    }
 }
