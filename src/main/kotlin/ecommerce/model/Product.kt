@@ -44,8 +44,8 @@ class Product(
     }
 
     fun addOption(option: Option) {
-        require(options.size == options.map { it.name }.distinct().size)
         this.options.add(option)
+        require(options.size == options.map { it.name }.distinct().size)
         option.product = this
     }
 }

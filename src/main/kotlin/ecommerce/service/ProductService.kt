@@ -23,7 +23,6 @@ class ProductService(
         nameExists(form.name)
         val option = Option(name = "none", quantity = 1)
         val product = ProductForm.toProduct(form, listOf(option))
-        option.product = product
         val savedProduct = productRepository.save(product)
         optionRepository.save(option)
         return productRepository.findByIdOrNull(savedProduct.id)
@@ -49,18 +48,17 @@ class ProductService(
         form: ProductForm,
         id: Long,
     ): Product {
-        val originalProduct =
-            productRepository.findByIdOrNull(id)
-                ?: throw InternalServerErrorException("ProductService.update() - Product with ID $id not found")
-        val originalName = originalProduct.name
+        val product =
+            productRepository.findById(id).orElseThrow { NotFoundException(MESSAGE_PRODUCT_NOT_FOUND) }
+
+        val originalName = product.name
         nameExists(form.name, originalName)
-        val product = productRepository.findById(id).get()
+
         product.changeName(form.name)
         product.changePrice(form.price)
         product.changeImageUrl(form.imageUrl)
-        productRepository.save(product)
-        return productRepository.findByIdOrNull(id)
-            ?: throw InternalServerErrorException(MESSAGE_PRODUCT_NOT_FOUND)
+
+        return productRepository.save(product)
     }
 
     fun delete(id: Long) {
@@ -68,17 +66,16 @@ class ProductService(
         productRepository.delete(product)
     }
 
-    fun nameExists(
+    private fun nameExists(
         name: String,
         originalName: String? = null,
-    ): Boolean {
+    ) {
         if (originalName != null && name == originalName) {
-            return true
+            return
         } else if (productRepository.findByName(name).isPresent) {
             val message = "Product with name '$name' already exists."
             throw ProductNameAlreadyExistsException(message)
         }
-        return false
     }
 
     companion object {
