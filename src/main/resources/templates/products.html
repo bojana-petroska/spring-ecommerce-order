@@ -42,7 +42,8 @@
             const response = await fetch('/api/products');
             if (!response.ok) throw new Error('Network response was not ok');
 
-            const products = await response.json();
+            const fetchedProducts = await response.json();
+            const products = fetchedProducts.content
             const tableBody = document.getElementById('product-table-body');
             tableBody.innerHTML = ''; // Clear any existing rows
 
