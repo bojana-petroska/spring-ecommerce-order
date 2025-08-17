@@ -36,7 +36,7 @@ class ProductControllerTest(
     fun `create() - should insert product and return 201 when form is valid`() {
         RestAssured
             .given().log().all()
-            .body(ProductForm(name = "product1 [new]", price = 1.5, imageUrl = "https://www.product.com/image/1"))
+            .body(ProductForm(name = "product1New", price = 1.5, imageUrl = "https://www.product.com/image/1"))
             .contentType(ContentType.JSON)
             .`when`().post("/api/products")
             .then().log().all()
@@ -179,7 +179,7 @@ class ProductControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.name", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test
@@ -334,7 +334,7 @@ class ProductControllerTest(
     @Test
     fun `update() - should return 400 when name of product already exists`() {
         val name = "Superman"
-        val product = productRepository.findByName(name)
+        val product = productRepository.findByName(name).get()
         val name2 = "Man"
         val expected = "Product with name '$name2' already exists."
 
@@ -348,7 +348,7 @@ class ProductControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.name", equalTo(expected))
+            .body("errors[0].message", equalTo(expected))
     }
 
     @Test

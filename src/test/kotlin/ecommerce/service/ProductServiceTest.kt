@@ -52,14 +52,14 @@ class ProductServiceTest(
 
     @Test
     fun `update() - should throw an exception when name of product already exists`() {
-        val product = productRepository.findByName("Superman")
+        val product = productRepository.findByName("Superman").get()
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
         assertThrows<ProductNameAlreadyExistsException> { productService.update(productForm, product.id) }
     }
 
     @Test
     fun `update() - should update the product when original product and new product have same name`() {
-        val product = productRepository.findByName("Iron Man")
+        val product = productRepository.findByName("Iron Man").get()
         val productForm = ProductForm(name = "Iron Man", price = 10.5, imageUrl = "https://www.product.com/image/1")
         val response = productService.update(productForm, product.id)
         assertThat(response.name).isEqualTo(productForm.name)

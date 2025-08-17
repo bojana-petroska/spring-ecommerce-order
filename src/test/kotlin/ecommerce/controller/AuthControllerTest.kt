@@ -25,9 +25,11 @@ import org.springframework.transaction.annotation.Transactional
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 class AuthControllerTest(
-    @Autowired private val controller: AuthController,
     @Autowired private val memberRepository: MemberRepository,
 ) {
+    @Autowired
+    lateinit var controller: AuthController
+
     @LocalServerPort
     private var port: Int = 0
 
@@ -126,7 +128,7 @@ class AuthControllerTest(
             .then().log().all()
             .assertThat()
             .statusCode(HttpStatus.BAD_REQUEST.value())
-            .body("errors.email", equalTo(expected))
+            .body("errors.find { it.field == 'name' }.message", equalTo(expected))
     }
 
     @Test
