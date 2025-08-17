@@ -42,7 +42,7 @@ class ProductRepositoryTest(
     @Test
     fun findByName() {
         val product = products.findById(1L).get()
-        val actual = products.findByName("Iron Man").get()
+        val actual = products.findByName("Iron Man")
         assertThat(actual.id).isNotZero()
         assertThat(actual.id).isEqualTo(product.id)
         assertThat(actual.name).isEqualTo(product.name)
@@ -95,6 +95,6 @@ class ProductRepositoryTest(
 
     @Test
     fun `findByName() - throws an exception if a product with same name does not exist`() {
-        assertThrows<NoSuchElementException> { products.findByName("Iron Body").get() }
+        assertThrows<NoSuchElementException> { products.findByName("Iron Body") }
     }
 }
