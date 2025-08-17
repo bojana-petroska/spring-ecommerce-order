@@ -4,7 +4,10 @@ import ecommerce.dto.errors.ErrorMessage
 import ecommerce.dto.errors.ErrorResponse
 import ecommerce.exception.AuthorizationException
 import ecommerce.exception.InternalServerErrorException
+import ecommerce.exception.MemberEmailAlreadyExistsException
 import ecommerce.exception.NotFoundException
+import ecommerce.exception.ProductNameAlreadyExistsException
+import ecommerce.exception.StripeClientException
 import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -69,5 +72,37 @@ class GlobalExceptionHandler {
         val error = ErrorMessage("authorization", e.message ?: "Authorization Error.")
         val errorResponse = ErrorResponse(listOf(error))
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse)
+    }
+
+    @ExceptionHandler(ProductNameAlreadyExistsException::class)
+    fun handleProductNameAlreadyExistsExceptionHandler(e: ProductNameAlreadyExistsException): ResponseEntity<ErrorResponse> {
+        val error = ErrorMessage("name", e.message ?: "Product name already exists..")
+        val errorResponse = ErrorResponse(listOf(error))
+        println("ProductNameAlreadyExistsException occurred: $errorResponse")
+        return ResponseEntity.badRequest().body(errorResponse)
+    }
+
+    @ExceptionHandler(MemberEmailAlreadyExistsException::class)
+    fun handleMemberEmailAlreadyExistsExceptionHandler(e: MemberEmailAlreadyExistsException): ResponseEntity<ErrorResponse> {
+        val error = ErrorMessage("name", e.message ?: "Member email already exists..")
+        val errorResponse = ErrorResponse(listOf(error))
+        println("MemberEmailAlreadyExistsException occurred: $errorResponse")
+        return ResponseEntity.badRequest().body(errorResponse)
+    }
+
+    @ExceptionHandler(StripeClientException::class)
+    fun handleStripeClientException(e: StripeClientException): ResponseEntity<ErrorResponse> {
+        println("StripeClientException occurred:" + e.message)
+        val stripeError = e.stripeErrorResponse
+        val errorResponse =
+            ErrorResponse(
+                listOf(
+                    ErrorMessage(
+                        stripeError.errors.adviceCode,
+                        stripeError.errors.message,
+                    ),
+                ),
+            )
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
     }
 }
