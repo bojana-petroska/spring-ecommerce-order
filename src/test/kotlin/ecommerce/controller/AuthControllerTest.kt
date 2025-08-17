@@ -1,10 +1,10 @@
 package ecommerce.controller
 
 import ecommerce.controller.api.AuthController
-import ecommerce.dto.AuthResponse
-import ecommerce.dto.LoginForm
-import ecommerce.dto.MemberResponse
-import ecommerce.dto.RegisterForm
+import ecommerce.dto.auth.AuthResponse
+import ecommerce.dto.member.LoginForm
+import ecommerce.dto.member.MemberResponse
+import ecommerce.dto.member.RegisterForm
 import ecommerce.model.Member
 import ecommerce.repository.MemberRepository
 import ecommerce.service.AuthService

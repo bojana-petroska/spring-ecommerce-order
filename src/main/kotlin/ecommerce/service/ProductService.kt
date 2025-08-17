@@ -1,6 +1,6 @@
 package ecommerce.service
 
-import ecommerce.dto.ProductForm
+import ecommerce.dto.product.ProductForm
 import ecommerce.exception.InternalServerErrorException
 import ecommerce.exception.NotFoundException
 import ecommerce.exception.ProductNameAlreadyExistsException
@@ -21,7 +21,7 @@ class ProductService(
 ) {
     fun insert(form: ProductForm): Product {
         nameExists(form.name)
-        val option = Option(name = "none", quantity = 1)
+        val option = Option(name = "none", quantity = 1, product = productRepository.findByName(form.name))
         val product = ProductForm.toProduct(form, listOf(option))
         val savedProduct = productRepository.save(product)
         return productRepository.findByIdOrNull(savedProduct.id)
@@ -71,7 +71,7 @@ class ProductService(
     ) {
         if (originalName != null && name == originalName) {
             return
-        } else if (productRepository.findByName(name).isPresent) {
+        } else {
             val message = "Product with name '$name' already exists."
             throw ProductNameAlreadyExistsException(message)
         }

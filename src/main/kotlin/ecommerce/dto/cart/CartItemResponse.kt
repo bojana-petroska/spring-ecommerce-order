@@ -1,10 +1,10 @@
-package ecommerce.dto
+package ecommerce.dto.cart
 
-import ecommerce.model.Product
+import ecommerce.dto.product.ProductResponse
 import java.time.LocalDateTime
 
 data class CartItemResponse(
-    val product: Product,
+    val product: ProductResponse,
     val quantity: Int,
     val createdAt: LocalDateTime,
 )

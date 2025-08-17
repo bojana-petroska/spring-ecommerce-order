@@ -1,4 +1,4 @@
-package ecommerce.dto
+package ecommerce.dto.member
 
 data class ActiveMemberInfo(
     val id: Long,

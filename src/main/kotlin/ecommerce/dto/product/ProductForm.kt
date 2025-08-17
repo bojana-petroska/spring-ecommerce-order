@@ -1,4 +1,4 @@
-package ecommerce.dto
+package ecommerce.dto.product
 
 import ecommerce.model.Option
 import ecommerce.model.Product
@@ -23,7 +23,7 @@ data class ProductForm(
             productForm: ProductForm,
             options: List<Option>,
         ): Product {
-            return Product(name = productForm.name, price = productForm.price, imageUrl = productForm.imageUrl, options = options)
+            return Product(name = productForm.name, price = productForm.price, imageUrl = productForm.imageUrl)
         }
     }
 }

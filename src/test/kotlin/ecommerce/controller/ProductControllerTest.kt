@@ -1,7 +1,7 @@
 package ecommerce.controller
 
 import ecommerce.controller.api.ProductController
-import ecommerce.dto.ProductForm
+import ecommerce.dto.product.ProductForm
 import ecommerce.exception.NotFoundException
 import ecommerce.repository.ProductRepository
 import io.restassured.RestAssured
@@ -334,7 +334,7 @@ class ProductControllerTest(
     @Test
     fun `update() - should return 400 when name of product already exists`() {
         val name = "Superman"
-        val product = productRepository.findByName(name).get()
+        val product = productRepository.findByName(name)
         val name2 = "Man"
         val expected = "Product with name '$name2' already exists."
 
