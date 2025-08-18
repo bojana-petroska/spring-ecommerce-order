@@ -1,5 +1,6 @@
 package ecommerce
 
+import ecommerce.stripe.StripeProperties
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication

@@ -93,13 +93,13 @@ class GlobalExceptionHandler {
     @ExceptionHandler(StripeClientException::class)
     fun handleStripeClientException(e: StripeClientException): ResponseEntity<ErrorResponse> {
         println("StripeClientException occurred:" + e.message)
-        val stripeError = e.stripeErrorResponse
+        val stripeError = e.stripeErrorResponse.error
         val errorResponse =
             ErrorResponse(
                 listOf(
                     ErrorMessage(
-                        stripeError.errors.adviceCode,
-                        stripeError.errors.message,
+                        stripeError.code ?: "unknown_code",
+                        stripeError.message,
                     ),
                 ),
             )
