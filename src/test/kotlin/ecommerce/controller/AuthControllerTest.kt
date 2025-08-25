@@ -21,15 +21,14 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder.controller
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional
 class AuthControllerTest(
     @Autowired private val memberRepository: MemberRepository,
+    @Autowired private val controller: AuthController,
 ) {
-    @Autowired
-    lateinit var controller: AuthController
-
     @LocalServerPort
     private var port: Int = 0
 

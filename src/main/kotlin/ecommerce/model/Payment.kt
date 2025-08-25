@@ -19,7 +19,7 @@ class Payment(
     @Column(name = "payment_intent_id", nullable = false)
     val paymentIntentId: String,
     @Column(nullable = false)
-    val amount: Int,
+    val amount: Double,
     @Column(nullable = false)
     val currency: String,
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

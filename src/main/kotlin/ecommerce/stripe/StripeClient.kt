@@ -1,11 +1,12 @@
 package ecommerce.stripe
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import ecommerce.dto.errors.StripeErrorMessage
 import ecommerce.dto.errors.StripeErrorResponse
 import ecommerce.dto.payment.PaymentRequest
 import ecommerce.dto.payment.PaymentResponse
 import ecommerce.exception.StripeClientException
-import kotlinx.serialization.json.Json
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -18,7 +19,7 @@ class StripeClient(
     private val stripeProperties: StripeProperties,
 ) {
     private val restClient = RestClient.create()
-    private val json = Json { ignoreUnknownKeys = true }
+    private val objectMapper = jacksonObjectMapper()
 
     fun createCheckoutSession(req: PaymentRequest): PaymentResponse? {
         val body =
@@ -62,27 +63,42 @@ class StripeClient(
     private fun parseStripeError(jsonString: String?): StripeErrorResponse? {
         if (jsonString.isNullOrBlank()) return null
         return try {
-            json.decodeFromString<StripeErrorResponse>(jsonString)
+            objectMapper.readValue(jsonString)
         } catch (ex: Exception) {
             null
         }
     }
 
     private fun convertMessageFromError(error: StripeErrorMessage?): String {
+        val declineCode = StripeDeclineCode.fromCode(error?.declineCode)
+
         return when (error?.code) {
             "card_declined" ->
-                when (error.declineCode) {
-                    "insufficient_funds" -> "Payment failed: insufficient balance."
-                    "expired_card" -> "Payment failed: your card has expired."
-                    "incorrect_cvc" -> "Payment failed: incorrect CVC."
-                    "lost_card" -> "Payment failed: lost card."
-                    "stolen_card" -> "Payment failed: stolen card."
+                when (declineCode) {
+                    StripeDeclineCode.INSUFFICIENT_FUNDS -> "Payment failed: insufficient balance."
+                    StripeDeclineCode.EXPIRED_CARD -> "Payment failed: your card has expired."
+                    StripeDeclineCode.INCORRECT_CVC -> "Payment failed: incorrect CVC."
+                    StripeDeclineCode.LOST_CARD -> "Payment failed: lost card."
+                    StripeDeclineCode.STOLEN_CARD -> "Payment failed: stolen card."
                     else -> "Payment was declined by your bank."
                 }
 
             "expired_card" -> "Payment failed: your card has expired."
             "processing_error" -> "Payment failed due to a processing error."
             else -> error?.message ?: "Payment failed for an unknown reason."
+        }
+    }
+
+    enum class StripeDeclineCode(val code: String) {
+        INSUFFICIENT_FUNDS("insufficient_funds"),
+        EXPIRED_CARD("expired_card"),
+        INCORRECT_CVC("incorrect_cvc"),
+        LOST_CARD("lost_card"),
+        STOLEN_CARD("stolen_card"),
+        UNKNOWN("unknown"), ;
+
+        companion object {
+            fun fromCode(code: String?): StripeDeclineCode = StripeDeclineCode.entries.find { it.code == code } ?: UNKNOWN
         }
     }
 }

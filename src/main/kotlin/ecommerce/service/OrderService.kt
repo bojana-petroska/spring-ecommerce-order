@@ -1,8 +1,8 @@
 package ecommerce.service
 
+import ecommerce.dto.order.OrderItemRequest
 import ecommerce.dto.order.OrderRequest
 import ecommerce.dto.order.OrderResponse
-import ecommerce.dto.payment.PaymentRequest
 import ecommerce.exception.NotFoundException
 import ecommerce.exception.StripeClientException
 import ecommerce.model.Member
@@ -10,6 +10,7 @@ import ecommerce.model.Order
 import ecommerce.model.OrderItem
 import ecommerce.model.OrderStatus
 import ecommerce.model.Payment
+import ecommerce.model.Product
 import ecommerce.repository.CartItemRepository
 import ecommerce.repository.OptionRepository
 import ecommerce.repository.OrderRepository
@@ -27,48 +28,38 @@ class OrderService(
     private val optionRepository: OptionRepository,
     private val orderRepository: OrderRepository,
     private val cartItemRepository: CartItemRepository,
+    private val paymentService: PaymentService,
 ) {
     @Transactional
     fun placeOrder(
         member: Member,
         req: OrderRequest,
     ): OrderResponse {
-        val product =
-            productRepository.findByIdOrNull(req.productId)
-                ?: throw NotFoundException("Product not found")
+        val orderItems = req.items.map { createOrderItem(it) }
+        val totalAmount = orderItems.sumOf { calculateAmount(it.product.price, it.quantity) }
 
-        val option =
-            optionRepository.findByIdOrNull(req.optionId)
-                ?: throw NotFoundException("Option not found")
+//        val paymentRequest =
+//            PaymentRequest(
+//                amount = totalAmount,
+//                currency = req.currency.code,
+//                paymentMethod = req.paymentMethod,
+//            )
 
-        if (option.product?.id != product.id) {
-            throw IllegalArgumentException("Selected option does not belong to the specified product.")
-        }
-
-        if (option.quantity < req.quantity) {
-            throw IllegalArgumentException("Not enough stock available")
-        }
-
-        val totalAmount = calculateAmount(product.price.toInt(), req.quantity)
-        val paymentRequest =
-            PaymentRequest(
+        val paymentResponse =
+            paymentService.processPayment(
                 amount = totalAmount,
-                currency = req.currency,
+                currencyCode = req.currency.code,
                 paymentMethod = req.paymentMethod,
             )
 
-        val paymentResponse = stripeClient.createCheckoutSession(paymentRequest)
-
-        if (paymentResponse == null || paymentResponse.id.isBlank()) {
-            throw StripeClientException.from(paymentResponse?.errorMessage ?: "Stripe did not return a valid response.")
+        if (paymentResponse.id.isBlank()) {
+            throw StripeClientException.from(paymentResponse.errorMessage ?: "Stripe did not return a valid response.")
         }
 
-        option.quantity -= req.quantity
-        optionRepository.save(option)
-
-        val existingCartItem = cartItemRepository.findByMemberAndProduct(member, product)
-        if (existingCartItem.isPresent) {
-            cartItemRepository.delete(existingCartItem.get())
+        orderItems.forEach { item ->
+            item.option.reduceStock(item.quantity)
+            optionRepository.save(item.option)
+            removeCartItem(member, item.product)
         }
 
         val order =
@@ -78,27 +69,20 @@ class OrderService(
                 createdAt = LocalDateTime.now(),
             )
 
-        val orderItem =
-            OrderItem(
-                product = product,
-                option = option,
-                quantity = req.quantity,
-            )
-        order.addItem(orderItem)
+        orderItems.forEach { order.addItem(it) }
 
         val payment =
             Payment(
                 order = order,
                 paymentIntentId = paymentResponse.id,
                 amount = totalAmount,
-                currency = req.currency,
+                currency = req.currency.code,
             )
-        order.assignPayment(payment)
 
+        order.assignPayment(payment)
         orderRepository.save(order)
 
         return OrderResponse(
-            success = true,
             message = "Order placed successfully",
             paymentIntentId = paymentResponse.id,
         )
@@ -109,17 +93,44 @@ class OrderService(
         val orders = orderRepository.findAllByMember(member)
         return orders.map {
             OrderResponse(
-                success = true,
                 message = "Order with ${it.items.size} item(s)",
                 paymentIntentId = it.payment?.paymentIntentId ?: "N/A",
             )
         }
     }
 
+    private fun createOrderItem(req: OrderItemRequest): OrderItem {
+        val product =
+            productRepository.findByIdOrNull(req.productId)
+                ?: throw NotFoundException("Product not found: ${req.productId}")
+
+        val option =
+            optionRepository.findByIdOrNull(req.optionId)
+                ?: throw NotFoundException("Option not found: ${req.optionId}")
+
+        require(option.product?.id == product.id) { "Selected option does not belong to the specified product." }
+
+        require(option.quantity >= req.quantity) { "Not enough stock available" }
+
+        return OrderItem(
+            product = product,
+            option = option,
+            quantity = req.quantity,
+        )
+    }
+
+    private fun removeCartItem(
+        member: Member,
+        product: Product,
+    ) {
+        cartItemRepository.findByMemberAndProduct(member, product)
+            .ifPresent { cartItemRepository.delete(it) }
+    }
+
     private fun calculateAmount(
-        price: Int,
+        price: Double,
         quantity: Int,
-    ): Int {
+    ): Double {
         return price * quantity
     }
 }
